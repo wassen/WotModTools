@@ -86,15 +86,23 @@ namespace WotModTool {
 			HardLinks(Path.Combine(setting.WotDir, "res_mods", setting.WOTVersion, "audio_test"), Path.Combine(setting.Workspace, "audio"));
 		}
 
-		//targetDir直下にあるファイル全てをlinkdirにハードリンクします
+
+		/**
+			<summary>
+			targetDir直下にあるファイル全てをディレクトリの構造を保ったままlinkDirにハードリンクします
+			</summary>
+			<param name="linkDir">リンクを作成するディレクトリ</param>
+			<param name="targetDir">リンクの参照元となるディレクトリ</param>
+		*/
+		//今更だけど、再帰で書いたほうが良かったのか？
 		public void HardLinks(string linkDir, string targetDir) {
 
-			//ディレクトリ存在チェック
 			if (!Directory.Exists(linkDir) || !Directory.Exists(targetDir)) {
 				Console.WriteLine("ディレクトリが存在しません");
 				return;
 			}
 
+			//ディレクトリ名の最後に\をつけて統一
 			string targetDir2 = Regex.Replace(targetDir, "\\?$", "\\");
 			var tdReg = new Regex(targetDir2);
 
@@ -104,7 +112,7 @@ namespace WotModTool {
 			foreach (string folder in folderList) {
 				//targetDir\B1F\B2F\fileName - targetDir = B1F\B2F\fileName を作成
 				//subStringでやってたけどなんか長くて気持ち悪かったので正規表現で
-				//Path.ComBineはファイル名の先頭に\が付いてるのを許さないため
+				//Path.ComBineがファイル名の先頭に\が付いてるのを許さないのでこんな処理してる
 				string folderName = tdReg.Replace(folder, "", 1);
 
 				Directory.CreateDirectory(Path.Combine(linkDir, folderName));
@@ -113,13 +121,20 @@ namespace WotModTool {
 			foreach (string file in fileList) {
 				string fileName = tdReg.Replace(file, "", 1);
 
-				//TODO Folderに';'が含まれてるとリンクが作られなかったため要調査
-				Mklink(@"/H", Path.Combine(linkDir, fileName), file);
+				Mklink("/H", Path.Combine(linkDir, fileName), file);
 			}
 		}
 
-		//"D"irectory "H"ardlink "J"unction
-		public void Mklink(string type, string link, string target) {
+		/**
+			<summary>
+			DOSコマンドのmklinkを呼び出します。
+			</summary>
+			<param name="type">"/H" ハードリンク "/J" ジャンクション "/S" シンボリックリンク </param>
+			<param name="linkDir">リンクを作成するディレクトリ</param>
+			<param name="targetDir">リンクの参照元となるディレクトリ</param>
+			TODO フォルダ名に';'が含まれてるとリンクが作られなかったため要調査
+		*/
+		public void Mklink(string type, string linkDir, string targetDir) {
 			Process p = new System.Diagnostics.Process();
 			p.StartInfo.FileName = System.Environment.GetEnvironmentVariable("ComSpec");
 			//出力を読み取れるようにする
@@ -129,14 +144,14 @@ namespace WotModTool {
 			//ウィンドウを表示しないようにする
 			p.StartInfo.CreateNoWindow = true;
 			//コマンドラインを指定（"/c"は実行後閉じるために必要
-			p.StartInfo.Arguments = @"/c mklink " + type + @" " + link + @" " + target;
+			p.StartInfo.Arguments = @"/c mklink " + type + " " + linkDir + " " + targetDir;
 			p.Start();
 			//出力を読み取る
 			string results = p.StandardOutput.ReadToEnd();
 			p.WaitForExit();
 			//何回もcloseするのは効率が悪いのか？
 			p.Close();
-			Console.WriteLine(@"/c mklink " + type + @" " + link + @" " + target);
+			Console.WriteLine(@"/c mklink " + type + @" " + linkDir + @" " + targetDir);
 			Console.WriteLine(results);
 		}
 
@@ -154,15 +169,12 @@ namespace WotModTool {
 
 			//コントロール内にドロップされたとき実行される
 			//ドロップされたすべてのファイル名を取得する
-			string[] folderName =
+			string[] fileName =
 				(string[])e.Data.GetData(DataFormats.FileDrop, false);
 			//TextBoxに追加する
 			//Listにしてあげたい。2つ以上の処理。
 			//一つのファイルに複数のaudioがあった時も未実装
-			textBox1.Text = folderName[0];
-
-
-
+			listBox3.Items.AddRange(fileName);
 		}
 		private string InputModName() {
 			var inputBox = new Form2();
@@ -201,7 +213,9 @@ namespace WotModTool {
 
 		}
 
+
 		private void button2_Click(object sender, EventArgs e) {
+
 		}
 
 		private void echo(string str) {
@@ -211,57 +225,116 @@ namespace WotModTool {
 		private void listBox1_SelectedIndexChanged(object sender, EventArgs e) {
 
 		}
+		//プログラム書いている時に、時々、そもそもこの処理は必要なのか、何を実現したかったのかを思い返すことが大事
+		private string ObtainMods() {
 
-		private void button3_Click(object sender, EventArgs e) {
-			if (!Directory.Exists(textBox1.Text)) {
-				listBox1.Items.Add("フォルダーじゃない気がする");
-				return;
-			}
+			//string mongon;
 
-			bool audioFolderFlag = false;
+			//ディレクトリだけにして、複数ファイル来たら、同一ディレクトリ内にないファイルをModに追加できませんとかにしよ。
+			//if (argInfos is IEnumerable<FileInfo>) {
+			//	var infos = (IEnumerable<FileInfo>)argInfos;
 
-			DirectoryInfo diInfo = new DirectoryInfo(textBox1.Text);
-			var finfos = new List<FileInfo>();
-			finfos.AddRange(diInfo.GetFiles("*.FEV", SearchOption.AllDirectories));//個人的メモ .FEVって書いてるけど、.fevも認識できる様。
-			finfos.AddRange(diInfo.GetFiles("*.FSB", SearchOption.AllDirectories));
+			//}
 
-			//親ディレクトリの重複確認
-			var dirNameList = new List<string>();
-			foreach (FileInfo info in finfos) {
-				dirNameList.Add(info.DirectoryName);
-			}
-			IEnumerable<string> unique = dirNameList.Distinct();
-			if (unique.Count() != 1) {
-				listBox1.Items.Add("fev、fsbファイルが存在しないか、複数のフォルダに点在しています。");
-				return;
-			}
+			//取り込んだModの削除も実装したい
+
 
 			//modに名前付けてもらう。デフォルトで突っ込んだディレクトリの名前を出してもいいか？
 			string input = InputModName();
 			if (input == null) {
-				listBox1.Items.Add("キャンセル！！！");
-				return;
+				consoleBox.Items.Add("キャンセル！！！");
+				return null;
 			}
 
-			string workFolder = Path.Combine(setting.Workspace, "audio", input);
+			string copyFolder = Path.Combine(setting.Workspace, "audio", input);
 
-			if (Directory.Exists(workFolder)) {
-				listBox1.Items.Add("もう" + input + "はあるで");
-				return;
+			if (Directory.Exists(copyFolder)) {
+				consoleBox.Items.Add("もう" + input + "はあるで");
+				return null;
+			}
+			return input;
+
+
+
+
+
+
+		}
+
+
+		private void button3_Click(object sender, EventArgs e) {
+			//TODO 抜本的に改革 Dictにする？なんにせよフォルダ名なりなんなりをInputBoxに表示できるようにしておく。
+			//Modのあるフォルダーを選んでもらう？それか検知する？入力で作成するフォルダ名まで選んでもらえばよいか？
+			//なんにせよ、ディレクトリ一つだけしか出来ない現状はまずい。
+			//audioフォルダーの探索か。それがいいな。
+
+			//stringのリストで、ドロップされたディレクトリ名を取得
+			ListBox.ObjectCollection droppedObjList = listBox3.Items;
+			var droppedList = new List<string>();
+			foreach (object obj in droppedObjList) {
+				if (!(obj is String)) {
+					consoleBox.Items.Add("listBox3に想定していないObjectが含まれています");
+					return;
+				}
+				droppedList.Add((string)obj);
 			}
 
-			Directory.CreateDirectory(workFolder);
+			IEnumerable<FileInfo> dFileEnum = droppedList.Where(item => File.Exists(item)).Select(item => new FileInfo(item));
+			IEnumerable<DirectoryInfo> dDirectoryEnum = droppedList.Where(item => Directory.Exists(item)).Select(item => new DirectoryInfo(item));
 
-			foreach (FileInfo info in finfos) {
-				info.CopyTo(Path.Combine(workFolder, info.Name));
+			if (dFileEnum.Count() == 0) {
+			}
+			else if (dFileEnum.Select(item => item.DirectoryName).Distinct().Count() == 1) {//親ディレクトリが共通しているかどうか
+
+				//メソッド名が体を表してない。InputBoxと統合してしまうべきか？										
+
+				string input = ObtainMods();
+				if (input == null) {
+					return;
+				}
+				string copyFolder = Path.Combine(setting.Workspace, "audio", input);
+				foreach (FileInfo info in dFileEnum) {
+					info.CopyTo(copyFolder);
+				}
+			}
+			else {
+				consoleBox.Items.Add("同一フォルダー内に無いファイルは対応していません。");
 			}
 
-			//常にListBoxに足して、逆にsettingの方に要所要所で同期していく感じで。というか、フォルダーから取得したほうが確実か。
 
-			listBox2.Items.Add(input);
+			foreach (DirectoryInfo dInfo in dDirectoryEnum) {
 
-			//Directory.GetDirectories();
+				IEnumerable<DirectoryInfo> audioFolder = dInfo.GetDirectories("audio", SearchOption.AllDirectories);
+				var audioFolder2 = new List<DirectoryInfo>();
 
+				//audioフォルダーはない時、FEV検索とかしてあげたほうがいいのか？
+				if (dInfo.Name == "audio") {
+					audioFolder2.Add(dInfo);
+				}
+				else if (audioFolder.Count() > 0) {
+					audioFolder2.AddRange(audioFolder);
+				}
+				else {
+					MessageBox.Show("audioフォルダーが見つかりませんでした。");
+					audioFolder2.Add(dInfo);
+					//return;
+				}
+
+				//finfos.AddRange(dInfo.GetFiles("*.FEV", SearchOption.AllDirectories));//個人的メモ .FEVって書いてるけど、.fevも認識できる様子。
+				//finfos.AddRange(dInfo.GetFiles("*.FSB", SearchOption.AllDirectories));
+
+				foreach (DirectoryInfo audiodInfo in audioFolder2) {
+					string input = ObtainMods();
+					if (input == null) {
+						return;
+					}
+					string copyFolder = Path.Combine(setting.Workspace, "audio", input);
+					DirectoryCopy(audiodInfo.FullName, copyFolder);
+				}
+
+			}
+
+			listBox3.Items.Clear();
 
 			/*
 			TODO 2つのaudioフォルダーを両方
@@ -280,6 +353,33 @@ namespace WotModTool {
 
 		private void listBox2_SelectedIndexChanged(object sender, EventArgs e) {
 
+		}
+
+		private void listBox3_SelectedIndexChanged(object sender, EventArgs e) {
+
+		}
+
+		//丸パクリなのでちゃんとチェックして修正。
+		public static void DirectoryCopy(string sourcePath, string destinationPath) {
+			DirectoryInfo sourceDirectory = new DirectoryInfo(sourcePath);
+			DirectoryInfo destinationDirectory = new DirectoryInfo(destinationPath);
+
+			//コピー先のディレクトリがなければ作成する
+			if (destinationDirectory.Exists == false) {
+				destinationDirectory.Create();
+				destinationDirectory.Attributes = sourceDirectory.Attributes;
+			}
+
+			//ファイルのコピー
+			foreach (FileInfo fileInfo in sourceDirectory.GetFiles()) {
+				//同じファイルが存在していたら、常に上書きする
+				fileInfo.CopyTo(destinationDirectory.FullName + @"\" + fileInfo.Name, true);
+			}
+
+			//ディレクトリのコピー（再帰を使用）
+			foreach (System.IO.DirectoryInfo directoryInfo in sourceDirectory.GetDirectories()) {
+				DirectoryCopy(directoryInfo.FullName, destinationDirectory.FullName + @"\" + directoryInfo.Name);
+			}
 		}
 	}
 }
