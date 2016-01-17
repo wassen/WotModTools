@@ -55,36 +55,47 @@ namespace WotModTool {
 
 		}
 
-		private void button1_Click(object sender, EventArgs e) {
+		//TODO audioファイルが入ってないプログラムはダメなので修正
+		//TODO FEVとFSBだけしかファイルがないと仮定してもいいのか？
+		//Zipじゃなくても出来るようにしたい。if文分岐かな。
+		/*
+		zipファイル内のaudioディレクトリを検知
+		ハードリンクをaudioの全てのファイルについて張る(audioディレクトリ内を除く)
+		audioファイル内をリンク張る
+		*/
 
-			//TODO audioファイルが入ってないプログラムはダメなので修正
-			//TODO FEVとFSBだけしかファイルがないと仮定してもいいのか？
-			//Zipじゃなくても出来るようにしたい。if文分岐かな。
-			/*
-            zipファイル内のaudioディレクトリを検知
-            ハードリンクをaudioの全てのファイルについて張る(audioディレクトリ内を除く)
-            audioファイル内をリンク張る
-            */
+		//string zipFile = textBox1.Text;
+		//if (!File.Exists(zipFile)) {
+		//	MessageBox.Show("ファイル名:" + zipFile + "が存在しないか、ディレクトリである可能性があります。");
+		//	return;
+		//}
+		//else if (Path.GetExtension(zipFile) != ".zip") {
+		//	MessageBox.Show("zipファイルではないようですね。");
+		//	return;
+		//}
 
-			//string zipFile = textBox1.Text;
-			//if (!File.Exists(zipFile)) {
-			//	MessageBox.Show("ファイル名:" + zipFile + "が存在しないか、ディレクトリである可能性があります。");
-			//	return;
-			//}
-			//else if (Path.GetExtension(zipFile) != ".zip") {
-			//	MessageBox.Show("zipファイルではないようですね。");
-			//	return;
-			//}
+		//ZipArchive za = ZipFile.OpenRead(zipFile);
 
-			//ZipArchive za = ZipFile.OpenRead(zipFile);
+		//Directory.GetFiles(workPath);
 
-			//Directory.GetFiles(workPath);
+		//hardDirLink
+		//深すぎフォルダ問題
 
-			//hardDirLink
-			//深すぎフォルダ問題
+		//TODO 複数Modを優先度付きで同時に適用したいが、まあ今度で
+		private void AudioApplyButton_Click(object sender, EventArgs e) {
 
-			HardLinks(Path.Combine(setting.WotDir, "res_mods", setting.WOTVersion, "audio_test"), Path.Combine(setting.Workspace, "audio"));
+			string resAudioPath = Path.Combine(setting.WotDir, "res", "audio");
+			string res_modsAudioPath = Path.Combine(setting.WotDir, "res_mods", setting.WOTVersion, "audio");
+			string workspaceAudioPath = Path.Combine(setting.Workspace, "audio", "Mako");//TODO 暫定でMako確定。後で選択処理を入れる。
+			if (Directory.Exists(res_modsAudioPath)) {
+				consoleBox.Items.Add("既にAudioModが存在してます！ごめんねこの処理は未実装だよ！");
+				return;
+			}
+			HardLinks(res_modsAudioPath, resAudioPath);
+			//HardLinks(res_modsAudioPath, workspaceAudioPath);
 		}
+
+
 
 
 		/**
@@ -97,33 +108,51 @@ namespace WotModTool {
 		//今更だけど、再帰で書いたほうが良かったのか？
 		public void HardLinks(string linkDir, string targetDir) {
 
-			if (!Directory.Exists(linkDir) || !Directory.Exists(targetDir)) {
-				Console.WriteLine("ディレクトリが存在しません");
+			if (!Directory.Exists(targetDir)) {
+				Console.WriteLine("リンク元のディレクトリが存在しません");
 				return;
 			}
+			Directory.CreateDirectory(linkDir);
 
-			//ディレクトリ名の最後に\をつけて統一
-			string targetDir2 = Regex.Replace(targetDir, "\\?$", "\\");
-			var tdReg = new Regex(targetDir2);
+			//先頭文字列だけの置換方法を要検索
+			//正規表現でやると\が悪い子になるのでいまいちやりづらい。
+			//先頭のみ置換がstringのメソッドなりなんなりであるか、なければ\を\\に置換して正規表現にぶち込む。かなり強引な気もするが・・・素直に先頭文字列を削ったほうが良いのか？
+
+			/*
+			XXX ディレクトリがバックスラッシュじゃなく
+				てスラッシュだったらどうしよう・・・入出力の段階で全て統一したいね。
+			Console.WriteLine(Path.AltDirectorySeparatorChar); Console.WriteLine(Path.DirectorySeparatorChar);
+			Substringでやったほうが早かった気もする*/
 
 			var fileList = new List<string>(Directory.GetFiles(targetDir, "*", SearchOption.AllDirectories));
 			var folderList = new List<string>(Directory.GetDirectories(targetDir, "*", SearchOption.AllDirectories));
+
+			//行末に\をつけて統一
+			string targetDir_bs = Regex.Replace(targetDir, @"\\?$", "");
+			//\を\\に
+			targetDir_bs = Regex.Replace(targetDir_bs, @"\\|$", @"\\");
+
+			var targetReg = new Regex(targetDir_bs);
 
 			foreach (string folder in folderList) {
 				//targetDir\B1F\B2F\fileName - targetDir = B1F\B2F\fileName を作成
 				//subStringでやってたけどなんか長くて気持ち悪かったので正規表現で
 				//Path.ComBineがファイル名の先頭に\が付いてるのを許さないのでこんな処理してる
-				string folderName = tdReg.Replace(folder, "", 1);
+
+				//最初に現れたtargetDirをfolderから削除
+				string folderName = targetReg.Replace(folder, @"", 1);
 
 				Directory.CreateDirectory(Path.Combine(linkDir, folderName));
 			}
 
 			foreach (string file in fileList) {
-				string fileName = tdReg.Replace(file, "", 1);
-
+				//最初に現れたtargetDirをfolderから削除
+				string fileName = targetReg.Replace(file, @"", 1);
 				Mklink("/H", Path.Combine(linkDir, fileName), file);
 			}
 		}
+
+
 
 		/**
 			<summary>
@@ -215,11 +244,10 @@ namespace WotModTool {
 
 
 		private void button2_Click(object sender, EventArgs e) {
-
 		}
 
-		private void echo(string str) {
-			Console.WriteLine(str);
+		private void echo(object obj) {
+			Console.WriteLine(obj);
 		}
 
 		private void listBox1_SelectedIndexChanged(object sender, EventArgs e) {
