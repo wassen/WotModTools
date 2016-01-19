@@ -13,33 +13,36 @@ using System.Diagnostics;
 using System.Xml.Serialization;
 using System.Text.RegularExpressions;
 
-namespace WotModTool {
+namespace WotModTools {
 	public partial class Form1 : Form {
 
-		Setting setting;
+		Settings settings;
 		const string settingFilename = @"settings.wmt";
 
 		public Form1() {
 
-			setting = new Setting();
+			settings = new Settings();
 
-			//設定ファイルの読み込み
-			if (File.Exists(settingFilename)) {
-				var ser = new XmlSerializer(typeof(Setting));
-				StreamReader sr = new StreamReader(settingFilename, new UTF8Encoding(false));
-				setting = (Setting)ser.Deserialize(sr);
-				sr.Close();
+			try {
+				//設定ファイルの読み込み
+				if (File.Exists(settingFilename)) {
+					var ser = new XmlSerializer(typeof(Settings));
+					StreamReader sr = new StreamReader(settingFilename, new UTF8Encoding(false));
+					settings = (Settings)ser.Deserialize(sr);
+					sr.Close();
+				}
+			}
+			catch (System.Exception ex) {
+				//すべての例外をキャッチする
+				//例外の説明を表示する
+				System.Console.WriteLine(ex.Message);
 			}
 
-			//設定ファイルの書き込み
-			//using (var sw = new StreamWriter(fileName, false, new UTF8Encoding(false))) {
-			//	ser.Serialize(sw, setting);
-			//}
 
 			InitializeComponent();
 
 			//workspace\audioフォルダーから、AudioModの一覧を生成
-			string audioFolder = Path.Combine(setting.Workspace, "audio");
+			string audioFolder = Path.Combine(settings.Workspace, "audio");
 			if (Directory.Exists(audioFolder)) {
 				var audioDirList1 = new List<string>(Directory.GetDirectories(audioFolder));
 				IEnumerable<string> audioNameList = audioDirList1.Select(e => Path.GetFileName(e));
@@ -48,55 +51,46 @@ namespace WotModTool {
 				}
 			}
 
-
 		}
+		private void Form1_Load(object sender, EventArgs e) {
+			/*button2.BackgroundImage = Properties.Resources.setting_icon;
+			button2.Paint += new PaintEventHandler(button2_Paint);*/
+		}
+		/*
+		private void button2_Paint(object sender, PaintEventArgs e) {
+			Button btn = (Button)sender;
+			//ボタンの背景画像をボタンの大きさに合わせて描画
+			e.Graphics.DrawImage(btn.BackgroundImage, btn.ClientRectangle);
 
+			//ボタンのTextを描画する準備
+			StringFormat sf = new StringFormat();
+			//文字列を真ん中に描画
+			sf.Alignment = StringAlignment.Center;
+			sf.LineAlignment = StringAlignment.Center;
+			//&がアンダーラインになるようにする
+			sf.HotkeyPrefix = System.Drawing.Text.HotkeyPrefix.Show;
+			//Brushの作成
+			Brush brsh = new SolidBrush(btn.ForeColor);
+			//文字列を描画
+			e.Graphics.DrawString(btn.Text, btn.Font, brsh, btn.ClientRectangle, sf);
+			brsh.Dispose();
+
+			button2.Text = "";
+		}*/
 		private void textBox1_TextChanged(object sender, EventArgs e) {
 
 		}
 
-		//TODO audioファイルが入ってないプログラムはダメなので修正
-		//TODO FEVとFSBだけしかファイルがないと仮定してもいいのか？
-		//Zipじゃなくても出来るようにしたい。if文分岐かな。
-		/*
-		zipファイル内のaudioディレクトリを検知
-		ハードリンクをaudioの全てのファイルについて張る(audioディレクトリ内を除く)
-		audioファイル内をリンク張る
-		*/
-
-		//string zipFile = textBox1.Text;
-		//if (!File.Exists(zipFile)) {
-		//	MessageBox.Show("ファイル名:" + zipFile + "が存在しないか、ディレクトリである可能性があります。");
-		//	return;
-		//}
-		//else if (Path.GetExtension(zipFile) != ".zip") {
-		//	MessageBox.Show("zipファイルではないようですね。");
-		//	return;
-		//}
-
-		//ZipArchive za = ZipFile.OpenRead(zipFile);
-
-		//Directory.GetFiles(workPath);
-
-		//hardDirLink
-		//深すぎフォルダ問題
-
 		//TODO 複数Modを優先度付きで同時に適用したいが、まあ今度で
 		private void AudioApplyButton_Click(object sender, EventArgs e) {
 
-			string resAudioPath = Path.Combine(setting.WotDir, "res", "audio");
-			string res_modsAudioPath = Path.Combine(setting.WotDir, "res_mods", setting.WOTVersion, "audio");
-			string workspaceAudioPath = Path.Combine(setting.Workspace, "audio", "Mako");//TODO 暫定でMako確定。後で選択処理を入れる。
-			if (Directory.Exists(res_modsAudioPath)) {
-				consoleBox.Items.Add("既にAudioModが存在してます！ごめんねこの処理は未実装だよ！");
-				return;
-			}
+			string resAudioPath = Path.Combine(settings.WotDir, "res", "audio");
+			string res_modsAudioPath = Path.Combine(settings.WotDir, "res_mods", settings.WOTVersion, "audio");
+			string workspaceAudioPath = Path.Combine(settings.Workspace, "audio", "Mako");//TODO 暫定でMako確定。後で選択処理を入れる。
+
 			HardLinks(res_modsAudioPath, resAudioPath);
-			//HardLinks(res_modsAudioPath, workspaceAudioPath);
+			HardLinks(res_modsAudioPath, workspaceAudioPath);
 		}
-
-
-
 
 		/**
 			<summary>
@@ -105,7 +99,6 @@ namespace WotModTool {
 			<param name="linkDir">リンクを作成するディレクトリ</param>
 			<param name="targetDir">リンクの参照元となるディレクトリ</param>
 		*/
-		//今更だけど、再帰で書いたほうが良かったのか？
 		public void HardLinks(string linkDir, string targetDir) {
 
 			if (!Directory.Exists(targetDir)) {
@@ -114,45 +107,51 @@ namespace WotModTool {
 			}
 			Directory.CreateDirectory(linkDir);
 
-			//先頭文字列だけの置換方法を要検索
-			//正規表現でやると\が悪い子になるのでいまいちやりづらい。
-			//先頭のみ置換がstringのメソッドなりなんなりであるか、なければ\を\\に置換して正規表現にぶち込む。かなり強引な気もするが・・・素直に先頭文字列を削ったほうが良いのか？
-
-			/*
-			XXX ディレクトリがバックスラッシュじゃなく
-				てスラッシュだったらどうしよう・・・入出力の段階で全て統一したいね。
-			Console.WriteLine(Path.AltDirectorySeparatorChar); Console.WriteLine(Path.DirectorySeparatorChar);
-			Substringでやったほうが早かった気もする*/
-
 			var fileList = new List<string>(Directory.GetFiles(targetDir, "*", SearchOption.AllDirectories));
 			var folderList = new List<string>(Directory.GetDirectories(targetDir, "*", SearchOption.AllDirectories));
+
+			//targetDir\B1F\B2F\fileName - targetDir = B1F\B2F\fileName を作成
 
 			//行末に\をつけて統一
 			string targetDir_bs = Regex.Replace(targetDir, @"\\?$", "");
 			//\を\\に
 			targetDir_bs = Regex.Replace(targetDir_bs, @"\\|$", @"\\");
-
 			var targetReg = new Regex(targetDir_bs);
 
 			foreach (string folder in folderList) {
-				//targetDir\B1F\B2F\fileName - targetDir = B1F\B2F\fileName を作成
-				//subStringでやってたけどなんか長くて気持ち悪かったので正規表現で
-				//Path.ComBineがファイル名の先頭に\が付いてるのを許さないのでこんな処理してる
-
-				//最初に現れたtargetDirをfolderから削除
+				//最初に現れたtargetDirをfolderから''に置換
 				string folderName = targetReg.Replace(folder, @"", 1);
 
 				Directory.CreateDirectory(Path.Combine(linkDir, folderName));
 			}
 
 			foreach (string file in fileList) {
-				//最初に現れたtargetDirをfolderから削除
+				//最初に現れたtargetDirをfolderから''に置換
 				string fileName = targetReg.Replace(file, @"", 1);
-				Mklink("/H", Path.Combine(linkDir, fileName), file);
+
+				string fullLink = Path.Combine(linkDir, fileName);
+
+				if (File.Exists(fullLink)) {
+					//ハードリンクを比較するうまい方法が思いつかないため問答無用で削除して再リンク（一旦閉じてからもう一つも開けばいいだけだけど）
+					File.Delete(fullLink);
+					Console.WriteLine("sakujo");
+				}
+				//存在してる時にMklinkしても何も起こらないハズ
+				Mklink("/H", Path.Combine(linkDir, fullLink), file);
 			}
 		}
 
 
+
+
+
+
+		/*
+			XXX ディレクトリがバックスラッシュじゃなくてスラッシュだったらどうしよう・・・入出力の段階で全て統一したい。
+			Console.WriteLine(Path.AltDirectorySeparatorChar); Console.WriteLine(Path.DirectorySeparatorChar);
+			RegExpじゃなくてSubstringでやったほうが早かった気もする
+			Path.ComBineはファイル名の先頭に\が付いてるのを許さない模様（今までひっつけたディレクトリを消して、新しくディレクトリの開始として認識してしまうらしい）
+		*/
 
 		/**
 			<summary>
@@ -178,11 +177,12 @@ namespace WotModTool {
 			//出力を読み取る
 			string results = p.StandardOutput.ReadToEnd();
 			p.WaitForExit();
-			//何回もcloseするのは効率が悪いのか？
 			p.Close();
 			Console.WriteLine(@"/c mklink " + type + @" " + linkDir + @" " + targetDir);
 			Console.WriteLine(results);
 		}
+		//何回もcloseするのは効率が悪い気もする
+		//ハードリンクのところで時間がかかるようなら、メソッド化せずに書いていちいちcloseしないことも検討
 
 		private void Form1_DragEnter(object sender, DragEventArgs e) {
 			//コントロール内にドラッグされたとき実行される
@@ -205,6 +205,7 @@ namespace WotModTool {
 			//一つのファイルに複数のaudioがあった時も未実装
 			listBox3.Items.AddRange(fileName);
 		}
+
 		private string InputModName() {
 			var inputBox = new Form2();
 			inputBox.ShowDialog();
@@ -222,9 +223,6 @@ namespace WotModTool {
 
 		}
 
-		private void Form1_Load(object sender, EventArgs e) {
-
-		}
 
 		private void textBox2_TextChanged(object sender, EventArgs e) {
 
@@ -240,10 +238,6 @@ namespace WotModTool {
 
 		private void comboBox1_SelectedIndexChanged(object sender, EventArgs e) {
 
-		}
-
-
-		private void button2_Click(object sender, EventArgs e) {
 		}
 
 		private void echo(object obj) {
@@ -274,7 +268,7 @@ namespace WotModTool {
 				return null;
 			}
 
-			string copyFolder = Path.Combine(setting.Workspace, "audio", input);
+			string copyFolder = Path.Combine(settings.Workspace, "audio", input);
 
 			if (Directory.Exists(copyFolder)) {
 				consoleBox.Items.Add("もう" + input + "はあるで");
@@ -320,7 +314,7 @@ namespace WotModTool {
 				if (input == null) {
 					return;
 				}
-				string copyFolder = Path.Combine(setting.Workspace, "audio", input);
+				string copyFolder = Path.Combine(settings.Workspace, "audio", input);
 				foreach (FileInfo info in dFileEnum) {
 					info.CopyTo(copyFolder);
 				}
@@ -356,7 +350,7 @@ namespace WotModTool {
 					if (input == null) {
 						return;
 					}
-					string copyFolder = Path.Combine(setting.Workspace, "audio", input);
+					string copyFolder = Path.Combine(settings.Workspace, "audio", input);
 					DirectoryCopy(audiodInfo.FullName, copyFolder);
 				}
 
@@ -408,6 +402,36 @@ namespace WotModTool {
 			foreach (System.IO.DirectoryInfo directoryInfo in sourceDirectory.GetDirectories()) {
 				DirectoryCopy(directoryInfo.FullName, destinationDirectory.FullName + @"\" + directoryInfo.Name);
 			}
+		}
+
+		private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e) {
+
+		}
+
+		private void SettingButton_Click(object sender, EventArgs e) {
+			var fs = new FormSetting(settings);
+			fs.ShowDialog();
+
+			var ser = new XmlSerializer(typeof(Settings));
+
+			//設定ファイルの書き込み
+			using (var sw = new StreamWriter(settingFilename, false, new UTF8Encoding(false))) {
+				ser.Serialize(sw, settings);
+			}
+
+			/*
+			if (fs.DialogResult == DialogResult.OK) {
+				string input = fs.TextBox;
+				fs.Dispose();
+
+				return input;
+			}
+			else {
+				Console.WriteLine("きゃんせりんぐー");
+				return null;
+			}
+			*/
+
 		}
 	}
 }
