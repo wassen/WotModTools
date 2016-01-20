@@ -10,83 +10,49 @@ using System.Windows.Forms;
 using System.IO.Compression;
 using System.IO;
 using System.Diagnostics;
-using System.Xml.Serialization;
 using System.Text.RegularExpressions;
+using System.Xml;
+using System.Runtime.Serialization;
+
 
 namespace WotModTools {
 	public partial class Form1 : Form {
 
-		Settings settings;
-		const string settingFilename = @"settings.wmt";
+		private Properties.Settings Settings;
 
 		public Form1() {
 
-			settings = new Settings();
-
-			try {
-				//設定ファイルの読み込み
-				if (File.Exists(settingFilename)) {
-					var ser = new XmlSerializer(typeof(Settings));
-					StreamReader sr = new StreamReader(settingFilename, new UTF8Encoding(false));
-					settings = (Settings)ser.Deserialize(sr);
-					sr.Close();
-				}
-			}
-			catch (System.Exception ex) {
-				//すべての例外をキャッチする
-				//例外の説明を表示する
-				System.Console.WriteLine(ex.Message);
-			}
-
-
 			InitializeComponent();
 
-			//workspace\audioフォルダーから、AudioModの一覧を生成
-			string audioFolder = Path.Combine(settings.Workspace, "audio");
-			if (Directory.Exists(audioFolder)) {
-				var audioDirList1 = new List<string>(Directory.GetDirectories(audioFolder));
+			Settings = Properties.Settings.Default;
+
+			//workspace\audio or othersフォルダーから、Modの一覧を生成
+			string[] typeList = { "audio", "others" };
+
+			foreach (string type in typeList) {
+				string typeFolder = Path.Combine(Settings.Workspace, type);
+				if (!Directory.Exists(typeFolder)) {
+					continue;
+				}
+				var audioDirList1 = new List<string>(Directory.GetDirectories(typeFolder));
 				IEnumerable<string> audioNameList = audioDirList1.Select(e => Path.GetFileName(e));
 				foreach (string name in audioNameList) {
-					listBox2.Items.Add(name);
+					checkedListBox1.Items.Add(name);
 				}
 			}
-
 		}
+
 		private void Form1_Load(object sender, EventArgs e) {
-			/*button2.BackgroundImage = Properties.Resources.setting_icon;
-			button2.Paint += new PaintEventHandler(button2_Paint);*/
 		}
-		/*
-		private void button2_Paint(object sender, PaintEventArgs e) {
-			Button btn = (Button)sender;
-			//ボタンの背景画像をボタンの大きさに合わせて描画
-			e.Graphics.DrawImage(btn.BackgroundImage, btn.ClientRectangle);
 
-			//ボタンのTextを描画する準備
-			StringFormat sf = new StringFormat();
-			//文字列を真ん中に描画
-			sf.Alignment = StringAlignment.Center;
-			sf.LineAlignment = StringAlignment.Center;
-			//&がアンダーラインになるようにする
-			sf.HotkeyPrefix = System.Drawing.Text.HotkeyPrefix.Show;
-			//Brushの作成
-			Brush brsh = new SolidBrush(btn.ForeColor);
-			//文字列を描画
-			e.Graphics.DrawString(btn.Text, btn.Font, brsh, btn.ClientRectangle, sf);
-			brsh.Dispose();
-
-			button2.Text = "";
-		}*/
 		private void textBox1_TextChanged(object sender, EventArgs e) {
-
 		}
 
 		//TODO 複数Modを優先度付きで同時に適用したいが、まあ今度で
 		private void AudioApplyButton_Click(object sender, EventArgs e) {
-
-			string resAudioPath = Path.Combine(settings.WotDir, "res", "audio");
-			string res_modsAudioPath = Path.Combine(settings.WotDir, "res_mods", settings.WOTVersion, "audio");
-			string workspaceAudioPath = Path.Combine(settings.Workspace, "audio", "Mako");//TODO 暫定でMako確定。後で選択処理を入れる。
+			string resAudioPath = Path.Combine(Settings.WotDir, "res", "audio");
+			string res_modsAudioPath = Path.Combine(Settings.WotDir, "res_mods", Settings.WotVersion, "audio");
+			string workspaceAudioPath = Path.Combine(Settings.Workspace, "audio", "Mako");//TODO 暫定でMako確定。後で選択処理を入れる。
 
 			HardLinks(res_modsAudioPath, resAudioPath);
 			HardLinks(res_modsAudioPath, workspaceAudioPath);
@@ -111,7 +77,6 @@ namespace WotModTools {
 			var folderList = new List<string>(Directory.GetDirectories(targetDir, "*", SearchOption.AllDirectories));
 
 			//targetDir\B1F\B2F\fileName - targetDir = B1F\B2F\fileName を作成
-
 			//行末に\をつけて統一
 			string targetDir_bs = Regex.Replace(targetDir, @"\\?$", "");
 			//\を\\に
@@ -121,16 +86,13 @@ namespace WotModTools {
 			foreach (string folder in folderList) {
 				//最初に現れたtargetDirをfolderから''に置換
 				string folderName = targetReg.Replace(folder, @"", 1);
-
 				Directory.CreateDirectory(Path.Combine(linkDir, folderName));
 			}
 
 			foreach (string file in fileList) {
 				//最初に現れたtargetDirをfolderから''に置換
 				string fileName = targetReg.Replace(file, @"", 1);
-
 				string fullLink = Path.Combine(linkDir, fileName);
-
 				if (File.Exists(fullLink)) {
 					//ハードリンクを比較するうまい方法が思いつかないため問答無用で削除して再リンク（一旦閉じてからもう一つも開けばいいだけだけど）
 					File.Delete(fullLink);
@@ -140,12 +102,6 @@ namespace WotModTools {
 				Mklink("/H", Path.Combine(linkDir, fullLink), file);
 			}
 		}
-
-
-
-
-
-
 		/*
 			XXX ディレクトリがバックスラッシュじゃなくてスラッシュだったらどうしよう・・・入出力の段階で全て統一したい。
 			Console.WriteLine(Path.AltDirectorySeparatorChar); Console.WriteLine(Path.DirectorySeparatorChar);
@@ -185,24 +141,15 @@ namespace WotModTools {
 		//ハードリンクのところで時間がかかるようなら、メソッド化せずに書いていちいちcloseしないことも検討
 
 		private void Form1_DragEnter(object sender, DragEventArgs e) {
-			//コントロール内にドラッグされたとき実行される
 			if (e.Data.GetDataPresent(DataFormats.FileDrop))
-				//ドラッグされたデータ形式を調べ、ファイルのときはコピーとする
 				e.Effect = DragDropEffects.Copy;
 			else
-				//ファイル以外は受け付けない
 				e.Effect = DragDropEffects.None;
 		}
 
 		private void Form1_DragDrop(object sender, DragEventArgs e) {
-
-			//コントロール内にドロップされたとき実行される
-			//ドロップされたすべてのファイル名を取得する
-			string[] fileName =
-				(string[])e.Data.GetData(DataFormats.FileDrop, false);
+			string[] fileName = (string[])e.Data.GetData(DataFormats.FileDrop, false);
 			//TextBoxに追加する
-			//Listにしてあげたい。2つ以上の処理。
-			//一つのファイルに複数のaudioがあった時も未実装
 			listBox3.Items.AddRange(fileName);
 		}
 
@@ -221,27 +168,6 @@ namespace WotModTools {
 				return null;
 			}
 
-		}
-
-
-		private void textBox2_TextChanged(object sender, EventArgs e) {
-
-		}
-
-		private void label1_Click(object sender, EventArgs e) {
-
-		}
-
-		private void label2_Click(object sender, EventArgs e) {
-
-		}
-
-		private void comboBox1_SelectedIndexChanged(object sender, EventArgs e) {
-
-		}
-
-		private void echo(object obj) {
-			Console.WriteLine(obj);
 		}
 
 		private void listBox1_SelectedIndexChanged(object sender, EventArgs e) {
@@ -268,19 +194,13 @@ namespace WotModTools {
 				return null;
 			}
 
-			string copyFolder = Path.Combine(settings.Workspace, "audio", input);
+			string copyFolder = Path.Combine(Settings.Workspace, "audio", input);
 
 			if (Directory.Exists(copyFolder)) {
 				consoleBox.Items.Add("もう" + input + "はあるで");
 				return null;
 			}
 			return input;
-
-
-
-
-
-
 		}
 
 
@@ -314,7 +234,7 @@ namespace WotModTools {
 				if (input == null) {
 					return;
 				}
-				string copyFolder = Path.Combine(settings.Workspace, "audio", input);
+				string copyFolder = Path.Combine(Settings.Workspace, "audio", input);
 				foreach (FileInfo info in dFileEnum) {
 					info.CopyTo(copyFolder);
 				}
@@ -350,7 +270,7 @@ namespace WotModTools {
 					if (input == null) {
 						return;
 					}
-					string copyFolder = Path.Combine(settings.Workspace, "audio", input);
+					string copyFolder = Path.Combine(Settings.Workspace, "audio", input);
 					DirectoryCopy(audiodInfo.FullName, copyFolder);
 				}
 
@@ -373,13 +293,7 @@ namespace WotModTools {
 			*/
 		}
 
-		private void listBox2_SelectedIndexChanged(object sender, EventArgs e) {
 
-		}
-
-		private void listBox3_SelectedIndexChanged(object sender, EventArgs e) {
-
-		}
 
 		//丸パクリなのでちゃんとチェックして修正。
 		public static void DirectoryCopy(string sourcePath, string destinationPath) {
@@ -405,33 +319,32 @@ namespace WotModTools {
 		}
 
 		private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e) {
-
 		}
 
 		private void SettingButton_Click(object sender, EventArgs e) {
-			var fs = new FormSetting(settings);
+			var fs = new FormSetting();
 			fs.ShowDialog();
-
-			var ser = new XmlSerializer(typeof(Settings));
-
-			//設定ファイルの書き込み
-			using (var sw = new StreamWriter(settingFilename, false, new UTF8Encoding(false))) {
-				ser.Serialize(sw, settings);
-			}
-
-			/*
-			if (fs.DialogResult == DialogResult.OK) {
-				string input = fs.TextBox;
-				fs.Dispose();
-
-				return input;
-			}
-			else {
-				Console.WriteLine("きゃんせりんぐー");
-				return null;
-			}
-			*/
-
 		}
+
+		private void textBox2_TextChanged(object sender, EventArgs e) {
+		}
+		private void label1_Click(object sender, EventArgs e) {
+		}
+		private void label2_Click(object sender, EventArgs e) {
+		}
+		private void comboBox1_SelectedIndexChanged(object sender, EventArgs e) {
+		}
+		private void listBox3_SelectedIndexChanged(object sender, EventArgs e) {
+		}
+
+
 	}
 }
+
+
+
+/*
+	TODO ドラッグアンドドロップで、一つのファイルに複数のaudioがあった時の処理
+
+	
+*/

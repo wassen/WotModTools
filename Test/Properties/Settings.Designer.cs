@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace WotModTools.Properties {
+namespace Test.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -25,43 +25,7 @@ namespace WotModTools.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Games\\World_of_Tanks\\")]
-        public string WotDir {
-            get {
-                return ((string)(this["WotDir"]));
-            }
-            set {
-                this["WotDir"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("workspace\\")]
-        public string Workspace {
-            get {
-                return ((string)(this["Workspace"]));
-            }
-            set {
-                this["Workspace"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.9.13")]
-        public string WotVersion {
-            get {
-                return ((string)(this["WotVersion"]));
-            }
-            set {
-                this["WotVersion"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("kuso")]
         public string Setting {
             get {
                 return ((string)(this["Setting"]));

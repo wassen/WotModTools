@@ -1,7 +1,18 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)">
-  <Profiles>
-    <Profile Name="(Default)" />
-  </Profiles>
-  <Settings />
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="WotModTools.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="WotDir" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\Games\World_of_Tanks\</Value>
+    </Setting>
+    <Setting Name="Workspace" Type="System.String" Scope="User">
+      <Value Profile="(Default)">workspace\</Value>
+    </Setting>
+    <Setting Name="WotVersion" Type="System.String" Scope="User">
+      <Value Profile="(Default)">0.9.13</Value>
+    </Setting>
+    <Setting Name="Setting" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+  </Settings>
 </SettingsFile>

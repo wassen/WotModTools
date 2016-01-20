@@ -10,22 +10,32 @@ using System.IO;
 
 namespace WotModTools {
 	public partial class FormSetting : Form {
-		Settings settings;
-		public FormSetting(Settings settings) {
+		public FormSetting() {
 			InitializeComponent();
-			this.settings = settings;
-			textBox1.Text = settings.WOTVersion;
+			wotVersionBox.Text = Properties.Settings.Default.WotVersion;
 		}
 
 		private void Form3_Load(object sender, EventArgs e) {
 
 		}
 
-		private void textBox1_TextChanged(object sender, EventArgs e) {
+		private void button1_Click(object sender, EventArgs e) {
+			Properties.Settings.Default.Save();
+		}
+
+		private void wotVersionBox_TextChanged(object sender, EventArgs e) {
+			Properties.Settings.Default.WotVersion = wotVersionBox.Text;
+		}
+
+		private void wotVersionBox_MouseEnter(object sender, EventArgs e) {
 
 		}
 
-		private void button1_Click(object sender, EventArgs e) {
+		private void toolTip1_Popup(object sender, PopupEventArgs e) {
+
+		}
+
+		private void label1_Click(object sender, EventArgs e) {
 
 		}
 	}

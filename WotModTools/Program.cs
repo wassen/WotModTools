@@ -19,29 +19,6 @@ namespace WotModTools {
 		}
 	}
 
-	public class Settings : ApplicationSettingsBase {
-		[UserScopedSetting()]
-		public string WotDir { get; set; }
-		private string workspace;
-		public string WOTVersion;
-		public string Workspace
-		{
-			get { return workspace; }
-			set
-			{
-				Directory.CreateDirectory(value);
-				this.workspace = value;
-			}
-		}
-
-		
-		public Settings() {
-			WotDir = @"C:\Games\World_of_Tanks\";
-			this.Workspace = @"workspace\";
-			WOTVersion = @"0.9.13";
-		}
-
-	}
 }
 
 //のこしたプログラム集

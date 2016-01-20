@@ -30,20 +30,19 @@
         {
 			this.button1 = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
-			this.comboBox1 = new System.Windows.Forms.ComboBox();
 			this.consoleBox = new System.Windows.Forms.ListBox();
 			this.label3 = new System.Windows.Forms.Label();
-			this.listBox2 = new System.Windows.Forms.ListBox();
 			this.button3 = new System.Windows.Forms.Button();
 			this.listBox3 = new System.Windows.Forms.ListBox();
 			this.checkedListBox1 = new System.Windows.Forms.CheckedListBox();
 			this.button2 = new System.Windows.Forms.Button();
+			this.directoryEntry1 = new System.DirectoryServices.DirectoryEntry();
 			this.SuspendLayout();
 			// 
 			// button1
 			// 
 			this.button1.AutoSize = true;
-			this.button1.Location = new System.Drawing.Point(383, 391);
+			this.button1.Location = new System.Drawing.Point(411, 385);
 			this.button1.Name = "button1";
 			this.button1.Size = new System.Drawing.Size(165, 44);
 			this.button1.TabIndex = 0;
@@ -61,19 +60,6 @@
 			this.label1.TabIndex = 3;
 			this.label1.Text = "Voice Mod";
 			this.label1.Click += new System.EventHandler(this.label1_Click);
-			// 
-			// comboBox1
-			// 
-			this.comboBox1.FormattingEnabled = true;
-			this.comboBox1.Items.AddRange(new object[] {
-            "0.9.13"});
-			this.comboBox1.Location = new System.Drawing.Point(373, 242);
-			this.comboBox1.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
-			this.comboBox1.Name = "comboBox1";
-			this.comboBox1.Size = new System.Drawing.Size(199, 26);
-			this.comboBox1.TabIndex = 5;
-			this.comboBox1.Text = "0.9.13";
-			this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
 			// 
 			// consoleBox
 			// 
@@ -95,17 +81,6 @@
 			this.label3.Size = new System.Drawing.Size(144, 18);
 			this.label3.TabIndex = 8;
 			this.label3.Text = "通知とかそんな感じ";
-			// 
-			// listBox2
-			// 
-			this.listBox2.FormattingEnabled = true;
-			this.listBox2.ItemHeight = 18;
-			this.listBox2.Location = new System.Drawing.Point(757, 242);
-			this.listBox2.Margin = new System.Windows.Forms.Padding(5, 4, 5, 4);
-			this.listBox2.Name = "listBox2";
-			this.listBox2.Size = new System.Drawing.Size(146, 220);
-			this.listBox2.TabIndex = 9;
-			this.listBox2.SelectedIndexChanged += new System.EventHandler(this.listBox2_SelectedIndexChanged);
 			// 
 			// button3
 			// 
@@ -132,9 +107,9 @@
 			// 
 			this.checkedListBox1.AllowDrop = true;
 			this.checkedListBox1.FormattingEnabled = true;
-			this.checkedListBox1.Location = new System.Drawing.Point(23, 160);
+			this.checkedListBox1.Location = new System.Drawing.Point(27, 155);
 			this.checkedListBox1.Name = "checkedListBox1";
-			this.checkedListBox1.Size = new System.Drawing.Size(192, 304);
+			this.checkedListBox1.Size = new System.Drawing.Size(261, 324);
 			this.checkedListBox1.TabIndex = 12;
 			// 
 			// button2
@@ -155,16 +130,14 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 18F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(925, 662);
-			this.Controls.Add(this.button2);
 			this.Controls.Add(this.checkedListBox1);
+			this.Controls.Add(this.button1);
+			this.Controls.Add(this.button2);
 			this.Controls.Add(this.listBox3);
 			this.Controls.Add(this.button3);
-			this.Controls.Add(this.listBox2);
 			this.Controls.Add(this.label3);
 			this.Controls.Add(this.consoleBox);
-			this.Controls.Add(this.comboBox1);
 			this.Controls.Add(this.label1);
-			this.Controls.Add(this.button1);
 			this.Name = "Form1";
 			this.Text = "Form1";
 			this.Load += new System.EventHandler(this.Form1_Load);
@@ -179,14 +152,13 @@
 
         private System.Windows.Forms.Button button1;
 		private System.Windows.Forms.Label label1;
-		private System.Windows.Forms.ComboBox comboBox1;
 		private System.Windows.Forms.ListBox consoleBox;
 		private System.Windows.Forms.Label label3;
-		private System.Windows.Forms.ListBox listBox2;
 		private System.Windows.Forms.Button button3;
 		private System.Windows.Forms.ListBox listBox3;
 		private System.Windows.Forms.CheckedListBox checkedListBox1;
 		private System.Windows.Forms.Button button2;
+		private System.DirectoryServices.DirectoryEntry directoryEntry1;
 	}
 }
 
