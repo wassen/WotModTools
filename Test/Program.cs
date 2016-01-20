@@ -9,10 +9,6 @@ namespace Test {
 	class Program {
 		static void Main(string[] args) {
 
-			var a = new FileInfo(@"C:\Games\World_of_Tanks\res_mods\0.9.13\audio\ambient.fev");
-			Console.WriteLine(a.GetHashCode());
-			Console.ReadKey();
-
 		}
 
 	}

@@ -1,19 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.IO.Compression;
 using System.IO;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using System.Xml;
-using System.Runtime.Serialization;
-
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace WotModTools {
 	public partial class Form1 : Form {
@@ -42,17 +36,141 @@ namespace WotModTools {
 			}
 		}
 
-		private void Form1_Load(object sender, EventArgs e) {
+		private void Form1_DragEnter(object sender, DragEventArgs e) {
+			if (e.Data.GetDataPresent(DataFormats.FileDrop))
+				e.Effect = DragDropEffects.Copy;
+			else
+				e.Effect = DragDropEffects.None;
 		}
 
-		private void textBox1_TextChanged(object sender, EventArgs e) {
+		private void Form1_DragDrop(object sender, DragEventArgs e) {
+
+
+			Task.Factory.StartNew(() => {
+				//TODO 抜本的に改革 Dictにする？なんにせよフォルダ名なりなんなりをInputBoxに表示できるようにしておく。
+				//Modのあるフォルダーを選んでもらう？それか検知する？入力で作成するフォルダ名まで選んでもらえばよいか？
+				//なんにせよ、ディレクトリ一つだけしか出来ない現状はまずい。
+				//audioフォルダーの探索か。それがいいな。
+
+				string[] files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+
+				IEnumerable<FileInfo> dFileEnum = files.Where(item => File.Exists(item)).Select(item => new FileInfo(item));
+				IEnumerable<DirectoryInfo> dDirectoryEnum = files.Where(item => Directory.Exists(item)).Select(item => new DirectoryInfo(item));
+
+
+
+
+
+
+
+				foreach (DirectoryInfo dInfo in dDirectoryEnum) {
+
+					IEnumerable<DirectoryInfo> audioFolder = dInfo.GetDirectories("audio", SearchOption.AllDirectories);
+					var audioFolder2 = new List<DirectoryInfo>();
+
+					//audioフォルダーはない時、FEV検索とかしてあげたほうがいいのか？
+					if (dInfo.Name == "audio") {
+						audioFolder2.Add(dInfo);
+					}
+					else if (audioFolder.Count() > 0) {
+						audioFolder2.AddRange(audioFolder);
+					}
+					else {
+						MessageBox.Show("audioフォルダーが見つかりませんでした。");
+						audioFolder2.Add(dInfo);
+						//return;
+					}
+
+					//finfos.AddRange(dInfo.GetFiles("*.FEV", SearchOption.AllDirectories));//個人的メモ .FEVって書いてるけど、.fevも認識できる様子。
+					//finfos.AddRange(dInfo.GetFiles("*.FSB", SearchOption.AllDirectories));
+
+					foreach (DirectoryInfo audiodInfo in audioFolder2) {
+						string input = ShowModForm("");
+						if (input == null) {
+							return;
+						}
+						string copyFolder = Path.Combine(Settings.Workspace, "audio", input);
+						DirectoryCopy(audiodInfo.FullName, copyFolder);
+					}
+
+				}
+
+				listBox3.Items.Clear();
+
+				/*
+				TODO 2つのaudioフォルダーを両方
+				他、2つ以上のModを優先度付きで管理
+
+				流れ
+				ドラッグアンドドロップ
+				ファイルの内、audioファイルを探して作業ディレクトリにコピー （TODO zip拡張はまた今度）
+				audioがハードリンクされてなければする
+				audioファイル内にあるファイルのハードリンク削除
+				注意 ハードリンクの削除は単純に削除して大丈夫？
+				audioファイル内のものをリンク
+				終了！
+				*/
+
+			});
 		}
+
+		private void getModFromFile(IEnumerable<FileInfo> dFileEnum) {
+
+			IEnumerable<string> parentDir = dFileEnum.Select(item => item.DirectoryName).Distinct();
+			if (parentDir.Count() == 1) {//親ディレクトリが同一であるかどうか
+
+				string input = ShowModForm(Path.GetFileName(parentDir.ElementAt(0)));
+				if (input != null) {
+					string copyFolder = Path.Combine(Settings.Workspace, "audio", input);
+
+					if (!Directory.Exists(copyFolder)) {
+						foreach (FileInfo info in dFileEnum) {
+							info.CopyTo(copyFolder);
+						}
+					}
+					else {
+						Console.WriteLine("もう" + input + "はあるで");
+					}
+				}
+			}
+			else {
+				Console.WriteLine("ファイルではないか、同一フォルダー内に存在していません。");
+				Console.WriteLine("同一フォルダー内に存在していないファイルを同時にドラッグアンドドロップする方法があるのかどうか知らないけどね");
+			}
+		}
+
+		//プログラム書いている時に、時々、そもそもこの処理は必要なのか、何を実現したかったのか、メソッド分けずにやったほうが簡潔ではとかね？を思い返すことが大事
+		private string ShowModForm(string modName) {
+			using (var modForm = new ModForm(modName)) {
+				modForm.ShowDialog();
+				if (modForm.DialogResult == DialogResult.OK) {
+					string input = modForm.TextBox;
+					return input;
+				}
+				else {
+					return null;
+				}
+			}
+		}
+
+
+
+
+
+
+
+
+
+
+
+
 
 		//TODO 複数Modを優先度付きで同時に適用したいが、まあ今度で
 		private void AudioApplyButton_Click(object sender, EventArgs e) {
 			string resAudioPath = Path.Combine(Settings.WotDir, "res", "audio");
 			string res_modsAudioPath = Path.Combine(Settings.WotDir, "res_mods", Settings.WotVersion, "audio");
-			string workspaceAudioPath = Path.Combine(Settings.Workspace, "audio", "Mako");//TODO 暫定でMako確定。後で選択処理を入れる。
+			string workspaceAudioPath = Path.Combine(Settings.Workspace, "audio", "Mako");
+			//TODO 暫定でMako確定。後で選択処理を入れる。
 
 			HardLinks(res_modsAudioPath, resAudioPath);
 			HardLinks(res_modsAudioPath, workspaceAudioPath);
@@ -140,158 +258,9 @@ namespace WotModTools {
 		//何回もcloseするのは効率が悪い気もする
 		//ハードリンクのところで時間がかかるようなら、メソッド化せずに書いていちいちcloseしないことも検討
 
-		private void Form1_DragEnter(object sender, DragEventArgs e) {
-			if (e.Data.GetDataPresent(DataFormats.FileDrop))
-				e.Effect = DragDropEffects.Copy;
-			else
-				e.Effect = DragDropEffects.None;
-		}
-
-		private void Form1_DragDrop(object sender, DragEventArgs e) {
-			string[] fileName = (string[])e.Data.GetData(DataFormats.FileDrop, false);
-			//TextBoxに追加する
-			listBox3.Items.AddRange(fileName);
-		}
-
-		private string InputModName() {
-			var inputBox = new Form2();
-			inputBox.ShowDialog();
-
-			if (inputBox.DialogResult == DialogResult.OK) {
-				string input = inputBox.TextBox;
-				inputBox.Dispose();
-
-				return input;
-			}
-			else {
-				Console.WriteLine("きゃんせりんぐー");
-				return null;
-			}
-
-		}
-
-		private void listBox1_SelectedIndexChanged(object sender, EventArgs e) {
-
-		}
-		//プログラム書いている時に、時々、そもそもこの処理は必要なのか、何を実現したかったのかを思い返すことが大事
-		private string ObtainMods() {
-
-			//string mongon;
-
-			//ディレクトリだけにして、複数ファイル来たら、同一ディレクトリ内にないファイルをModに追加できませんとかにしよ。
-			//if (argInfos is IEnumerable<FileInfo>) {
-			//	var infos = (IEnumerable<FileInfo>)argInfos;
-
-			//}
-
-			//取り込んだModの削除も実装したい
 
 
-			//modに名前付けてもらう。デフォルトで突っ込んだディレクトリの名前を出してもいいか？
-			string input = InputModName();
-			if (input == null) {
-				consoleBox.Items.Add("キャンセル！！！");
-				return null;
-			}
 
-			string copyFolder = Path.Combine(Settings.Workspace, "audio", input);
-
-			if (Directory.Exists(copyFolder)) {
-				consoleBox.Items.Add("もう" + input + "はあるで");
-				return null;
-			}
-			return input;
-		}
-
-
-		private void button3_Click(object sender, EventArgs e) {
-			//TODO 抜本的に改革 Dictにする？なんにせよフォルダ名なりなんなりをInputBoxに表示できるようにしておく。
-			//Modのあるフォルダーを選んでもらう？それか検知する？入力で作成するフォルダ名まで選んでもらえばよいか？
-			//なんにせよ、ディレクトリ一つだけしか出来ない現状はまずい。
-			//audioフォルダーの探索か。それがいいな。
-
-			//stringのリストで、ドロップされたディレクトリ名を取得
-			ListBox.ObjectCollection droppedObjList = listBox3.Items;
-			var droppedList = new List<string>();
-			foreach (object obj in droppedObjList) {
-				if (!(obj is String)) {
-					consoleBox.Items.Add("listBox3に想定していないObjectが含まれています");
-					return;
-				}
-				droppedList.Add((string)obj);
-			}
-
-			IEnumerable<FileInfo> dFileEnum = droppedList.Where(item => File.Exists(item)).Select(item => new FileInfo(item));
-			IEnumerable<DirectoryInfo> dDirectoryEnum = droppedList.Where(item => Directory.Exists(item)).Select(item => new DirectoryInfo(item));
-
-			if (dFileEnum.Count() == 0) {
-			}
-			else if (dFileEnum.Select(item => item.DirectoryName).Distinct().Count() == 1) {//親ディレクトリが共通しているかどうか
-
-				//メソッド名が体を表してない。InputBoxと統合してしまうべきか？										
-
-				string input = ObtainMods();
-				if (input == null) {
-					return;
-				}
-				string copyFolder = Path.Combine(Settings.Workspace, "audio", input);
-				foreach (FileInfo info in dFileEnum) {
-					info.CopyTo(copyFolder);
-				}
-			}
-			else {
-				consoleBox.Items.Add("同一フォルダー内に無いファイルは対応していません。");
-			}
-
-
-			foreach (DirectoryInfo dInfo in dDirectoryEnum) {
-
-				IEnumerable<DirectoryInfo> audioFolder = dInfo.GetDirectories("audio", SearchOption.AllDirectories);
-				var audioFolder2 = new List<DirectoryInfo>();
-
-				//audioフォルダーはない時、FEV検索とかしてあげたほうがいいのか？
-				if (dInfo.Name == "audio") {
-					audioFolder2.Add(dInfo);
-				}
-				else if (audioFolder.Count() > 0) {
-					audioFolder2.AddRange(audioFolder);
-				}
-				else {
-					MessageBox.Show("audioフォルダーが見つかりませんでした。");
-					audioFolder2.Add(dInfo);
-					//return;
-				}
-
-				//finfos.AddRange(dInfo.GetFiles("*.FEV", SearchOption.AllDirectories));//個人的メモ .FEVって書いてるけど、.fevも認識できる様子。
-				//finfos.AddRange(dInfo.GetFiles("*.FSB", SearchOption.AllDirectories));
-
-				foreach (DirectoryInfo audiodInfo in audioFolder2) {
-					string input = ObtainMods();
-					if (input == null) {
-						return;
-					}
-					string copyFolder = Path.Combine(Settings.Workspace, "audio", input);
-					DirectoryCopy(audiodInfo.FullName, copyFolder);
-				}
-
-			}
-
-			listBox3.Items.Clear();
-
-			/*
-			TODO 2つのaudioフォルダーを両方
-			他、2つ以上のModを優先度付きで管理
-
-			流れ
-			ドラッグアンドドロップ
-			ファイルの内、audioファイルを探して作業ディレクトリにコピー （TODO zip拡張はまた今度）
-			audioがハードリンクされてなければする
-			audioファイル内にあるファイルのハードリンク削除
-			注意 ハードリンクの削除は単純に削除して大丈夫？
-			audioファイル内のものをリンク
-			終了！
-			*/
-		}
 
 
 
@@ -322,8 +291,9 @@ namespace WotModTools {
 		}
 
 		private void SettingButton_Click(object sender, EventArgs e) {
-			var fs = new FormSetting();
-			fs.ShowDialog();
+			using (var fs = new FormSetting()) {
+				fs.ShowDialog();
+			}
 		}
 
 		private void textBox2_TextChanged(object sender, EventArgs e) {
@@ -336,7 +306,14 @@ namespace WotModTools {
 		}
 		private void listBox3_SelectedIndexChanged(object sender, EventArgs e) {
 		}
-
+		private void Form1_Load(object sender, EventArgs e) {
+		}
+		private void textBox1_TextChanged(object sender, EventArgs e) {
+		}
+		private void listBox1_SelectedIndexChanged(object sender, EventArgs e) {
+		}
+		private void button3_Click(object sender, EventArgs e) {
+		}
 
 	}
 }
@@ -345,6 +322,7 @@ namespace WotModTools {
 
 /*
 	TODO ドラッグアンドドロップで、一つのファイルに複数のaudioがあった時の処理
-
+	TODO 知っているディレクトリを検索して、見つからなかった場合選択してもらう。
 	
 */
+//TODO 取り込んだModの削除も実装したい

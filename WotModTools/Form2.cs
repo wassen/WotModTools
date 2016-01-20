@@ -9,12 +9,14 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace WotModTools {
-	public partial class Form2 : Form {
+	public partial class ModForm : Form {
 
 		public string TextBox { get; set; }
 
-		public Form2() {
+		public ModForm(string modName) {
 			InitializeComponent();
+			label2.Text = modName;
+			textBox1.Text = modName;
 		}
 
 		private void Form2_Load(object sender, EventArgs e) {
@@ -28,6 +30,10 @@ namespace WotModTools {
 		private void button1_Click(object sender, EventArgs e) {
 			//空白ですよとか、exitしても委員会？とか教えてあげたい感じ。
 			//this.Close();
+		}
+
+		private void label2_Click(object sender, EventArgs e) {
+
 		}
 	}
 }
