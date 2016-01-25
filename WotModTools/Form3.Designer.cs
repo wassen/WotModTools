@@ -24,7 +24,7 @@
 		/// </summary>
 		private void InitializeComponent() {
 			this.components = new System.ComponentModel.Container();
-			this.wotVersionBox = new System.Windows.Forms.TextBox();
+			this.WotVersionBox = new System.Windows.Forms.TextBox();
 			this.label2 = new System.Windows.Forms.Label();
 			this.button1 = new System.Windows.Forms.Button();
 			this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
@@ -33,13 +33,13 @@
 			// 
 			// wotVersionBox
 			// 
-			this.wotVersionBox.Location = new System.Drawing.Point(175, 25);
-			this.wotVersionBox.Name = "wotVersionBox";
-			this.wotVersionBox.Size = new System.Drawing.Size(144, 25);
-			this.wotVersionBox.TabIndex = 0;
-			this.toolTip1.SetToolTip(this.wotVersionBox, "asdff\\\\\\");
-			this.wotVersionBox.TextChanged += new System.EventHandler(this.wotVersionBox_TextChanged);
-			this.wotVersionBox.MouseEnter += new System.EventHandler(this.wotVersionBox_MouseEnter);
+			this.WotVersionBox.Location = new System.Drawing.Point(175, 25);
+			this.WotVersionBox.Name = "wotVersionBox";
+			this.WotVersionBox.Size = new System.Drawing.Size(144, 25);
+			this.WotVersionBox.TabIndex = 0;
+			this.toolTip1.SetToolTip(this.WotVersionBox, "asdff\\\\\\");
+			this.WotVersionBox.TextChanged += new System.EventHandler(this.wotVersionBox_TextChanged);
+			this.WotVersionBox.MouseEnter += new System.EventHandler(this.WotVersionBox_MouseEnter);
 			// 
 			// label2
 			// 
@@ -85,7 +85,7 @@
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.button1);
 			this.Controls.Add(this.label2);
-			this.Controls.Add(this.wotVersionBox);
+			this.Controls.Add(this.WotVersionBox);
 			this.Name = "FormSetting";
 			this.Text = "Form3";
 			this.Load += new System.EventHandler(this.Form3_Load);
@@ -96,7 +96,7 @@
 
 		#endregion
 
-		private System.Windows.Forms.TextBox wotVersionBox;
+		private System.Windows.Forms.TextBox WotVersionBox;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.Button button1;
 		private System.Windows.Forms.ToolTip toolTip1;

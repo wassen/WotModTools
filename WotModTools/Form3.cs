@@ -12,7 +12,7 @@ namespace WotModTools {
 	public partial class FormSetting : Form {
 		public FormSetting() {
 			InitializeComponent();
-			wotVersionBox.Text = Properties.Settings.Default.WotVersion;
+			WotVersionBox.Text = Properties.Settings.Default.WotVersion;
 		}
 
 		private void Form3_Load(object sender, EventArgs e) {
@@ -24,10 +24,10 @@ namespace WotModTools {
 		}
 
 		private void wotVersionBox_TextChanged(object sender, EventArgs e) {
-			Properties.Settings.Default.WotVersion = wotVersionBox.Text;
+			Properties.Settings.Default.WotVersion = WotVersionBox.Text;
 		}
 
-		private void wotVersionBox_MouseEnter(object sender, EventArgs e) {
+		private void WotVersionBox_MouseEnter(object sender, EventArgs e) {
 
 		}
 

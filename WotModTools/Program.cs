@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Configuration;
+using System.Threading;
 
 namespace WotModTools {
 	static class Program {
@@ -15,10 +16,34 @@ namespace WotModTools {
 		static void Main() {
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new Form1());
+			Application.Run(new MainForm());
 		}
 	}
 
+	//http://qiita.com/hugo-sb/items/f3afc94e7133e9c641a7
+	class STATask {
+		public static Task Run<T>(Func<T> func) {
+			var tcs = new TaskCompletionSource<T>();
+			var thread = new Thread(() => {
+				try {
+					tcs.SetResult(func());
+				}
+				catch (Exception e) {
+					tcs.SetException(e);
+				}
+			});
+			thread.SetApartmentState(ApartmentState.STA);
+			thread.Start();
+			return tcs.Task;
+		}
+
+		public static Task Run(Action act) {
+			return Run(() => {
+				act();
+				return true;
+			});
+		}
+	}
 }
 
 //のこしたプログラム集
