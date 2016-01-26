@@ -49,6 +49,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddModFromDirectoryInfosForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AddModFromDirectoryInfosForm.Designer.cs">
+      <DependentUpon>AddModFromDirectoryInfosForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -75,12 +81,15 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Settings.cs" />
-    <Compile Include="WhichFolderForm.cs">
+    <Compile Include="AddModForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="WhichFolderForm.Designer.cs">
-      <DependentUpon>WhichFolderForm.cs</DependentUpon>
+    <Compile Include="AddModForm.Designer.cs">
+      <DependentUpon>AddModForm.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="AddModFromDirectoryInfosForm.resx">
+      <DependentUpon>AddModFromDirectoryInfosForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -100,8 +109,8 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="WhichFolderForm.resx">
-      <DependentUpon>WhichFolderForm.cs</DependentUpon>
+    <EmbeddedResource Include="AddModForm.resx">
+      <DependentUpon>AddModForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
   </ItemGroup>

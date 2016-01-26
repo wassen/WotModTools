@@ -12,36 +12,25 @@ using System.Threading;
 namespace WotModTools {
 	public partial class MainForm : Form {
 
+		private List<Form> openingFormList;
+
 		private Properties.Settings settings;
 
 		public MainForm() {
-
 			InitializeComponent();
-
 			this.settings = Properties.Settings.Default;
-
-			fileSystemWatcher1.Path = settings.Workspace;
-
+			openingFormList = new List<Form>();
+			fileSystemWatcher1.Path = settings.Mods;
 			ReloadModList();
 		}
 
 		private void ReloadModList() {
-
 			ModList.Items.Clear();
 
-			//workspace\audio or othersフォルダーから、Modの一覧を生成
-			string[] typeList = { "audio", "others" };
-
-			foreach (string type in typeList) {
-				string typeFolder = Path.Combine(settings.Workspace, type);
-				if (!Directory.Exists(typeFolder)) {
-					continue;
-				}
-
-				IEnumerable<string> modNameList = Directory.GetDirectories(typeFolder).Select(e => Path.GetFileName(e));
-				foreach (string name in modNameList) {
-					ModList.Items.Add(name);
-				}
+			IEnumerable<string> modNameList = Directory.GetDirectories(settings.Mods).Select(e => Path.GetFileName(e));
+			//IEnumerableからObjectCollectionへのスマートな変換法が見つからない。のでaddrangeを諦めた
+			foreach (string name in modNameList) {
+				ModList.Items.Add(name);
 			}
 		}
 
@@ -53,43 +42,20 @@ namespace WotModTools {
 		}
 
 		private void Form1_DragDrop(object sender, DragEventArgs e) {
+			string[] files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
 
+			IEnumerable<FileInfo> droppedFileInfoEnum = files.Where(item => File.Exists(item)).Select(item => new FileInfo(item));
+			IEnumerable<DirectoryInfo> droppedDirectoryInfoEnum = files.Where(item => Directory.Exists(item)).Select(item => new DirectoryInfo(item));
 
 			STATask.Run(() => {
-				//TODO 抜本的に改革 Dictにする？なんにせよフォルダ名なりなんなりをInputBoxに表示できるようにしておく。
-				//Modのあるフォルダーを選んでもらう？それか検知する？入力で作成するフォルダ名まで選んでもらえばよいか？
-				//なんにせよ、ディレクトリ一つだけしか出来ない現状はまずい。
-				//audioフォルダーの探索か。それがいいな。
-
-				string[] files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
-
-				IEnumerable<FileInfo> dFileEnum = files.Where(item => File.Exists(item)).Select(item => new FileInfo(item));
-				IEnumerable<DirectoryInfo> dDirectoryEnum = files.Where(item => Directory.Exists(item)).Select(item => new DirectoryInfo(item));
-
-
-				GetModFromFile(dFileEnum);
-				GetModFromDirectory(dDirectoryEnum);
-
-				/*
-				TODO 2つのaudioフォルダーを両方
-				他、2つ以上のModを優先度付きで管理
-
-				流れ
-				ドラッグアンドドロップ
-				ファイルの内、audioファイルを探して作業ディレクトリにコピー （TODO zip拡張はまた今度）
-				audioがハードリンクされてなければする
-				audioファイル内にあるファイルのハードリンク削除
-				注意 ハードリンクの削除は単純に削除して大丈夫？
-				audioファイル内のものをリンク
-				終了！
-				*/
-
+				GetModFromFileInfo(droppedFileInfoEnum);
+				GetModFromDirectoryInfo(droppedDirectoryInfoEnum);
 			});
 		}
 
-		private void GetModFromFile(IEnumerable<FileInfo> droppedFileEnum) {
+		private void GetModFromFileInfo(IEnumerable<FileInfo> droppedFileEnumInfo) {
 
-			IEnumerable<string> parentDir = droppedFileEnum.Select(item => item.DirectoryName).Distinct();
+			IEnumerable<string> parentDir = droppedFileEnumInfo.Select(item => item.DirectoryName).Distinct();
 			if (parentDir.Count() != 1) {//親ディレクトリが同一であるかどうか
 				Console.WriteLine("ファイルではないか、同一フォルダー内に存在していません。");
 				Console.WriteLine("同一フォルダー内に存在していないファイルを同時にドラッグアンドドロップする方法があるのかどうか知らないけどね");
@@ -102,76 +68,74 @@ namespace WotModTools {
 				return;
 			}
 
-			string copyFolder = Path.Combine(settings.Workspace, "audio", input);
+			string copyFolder = Path.Combine(settings.Mods, "audio", input);
 			if (Directory.Exists(copyFolder)) {
 				Console.WriteLine("もう" + input + "はあるで");
 				return;
 			}
 
-			foreach (FileInfo info in droppedFileEnum) {
+			foreach (FileInfo info in droppedFileEnumInfo) {
 				info.CopyTo(copyFolder);
 			}
 		}
 
-		private void GetModFromDirectory(IEnumerable<DirectoryInfo> droppedDirectoryEnum) {
-
-			foreach (DirectoryInfo droppedDirectoryInfo in droppedDirectoryEnum) {
-
-				//フォルダー内のModっぽいフォルダーを探索、なければ、ツリーを表示してどれがModか、どのディレクトリに入れるのかを聞く
-				//enumでエラーを返すか？voidにしてるが
-
-				IList<DirectoryInfo> modDirectories = droppedDirectoryInfo.GetDirectories("*", SearchOption.AllDirectories).ToList();
-				modDirectories.Add(droppedDirectoryInfo);
-
-				//audio,res_modsフォルダーに対する特殊処理は・・・こんどでいいや
+		private void GetModFromDirectoryInfo(IEnumerable<DirectoryInfo> droppedDirectoryInfoEnum) {
 
 
-				var wfForm = new WhichFolderForm(droppedDirectoryInfo) ;
-				wfForm.ShowDialog();
-				string from = wfForm.FromWhichFolder;
-				string to = wfForm.ToWhichFolder;
+			//フォルダー内のModっぽいフォルダーを探索、なければ、ツリーを表示してどれがModか、どのディレクトリに入れるのかを聞く
+			//enumでエラーを返すか？voidにしてるが
 
-				return;
+			//audio,res_modsフォルダーに対する特殊処理は・・・こんどでいいや
 
-				switch (modDirectories.Count(e => e.Name == "res_mods")) {
-					case 0:
+			var wfForm = new AddModFromDirectoryInfosForm(droppedDirectoryInfoEnum);
 
+			this.OpenForm(wfForm);
+			string from = wfForm.FromWhichFolder;
+			string to = wfForm.ToWhichFolder;
+			this.CloseForm(wfForm);
+
+			return;
+			//IList<DirectoryInfo> modDirectories = droppedDirectoryInfo.GetDirectories("*", SearchOption.AllDirectories).ToList();
+
+			/*
+			switch (modDirectories.Count(e => e.Name == "res_mods")) {
+				case 0:
 
 
 
-						string input;
 
-						break;
-					case 1:
+					string input;
 
-						break;
-					default:
-						MessageBox.Show("一つのディレクトリに複数のModが含まれているため、Modを追加できませんでした。");
-						continue;
-				}
-				switch (modDirectories.Where(e => e.Name == "audio").Count()) {
-					case 0:
-						MessageBox.Show("audioフォルダーが見つかりませんでした。");
-						break;
-					case 1:
-						break;
-					default:
-						MessageBox.Show("audioフォルダー2つ以上あるんだが？");
-						continue;
-				}
+					break;
+				case 1:
 
-
-
-				//foreach (DirectoryInfo audiodInfo in audioDirectories) {
-				//	string input = ShowModForm("modify!!!");
-				//	if (input == null) {
-				//		return;
-				//	}
-				//	string copyFolder = Path.Combine(settings.Workspace, "audio", input);
-				//	DirectoryCopy(audiodInfo.FullName, copyFolder);
-				//}
-
+					break;
+				default:
+					MessageBox.Show("一つのディレクトリに複数のModが含まれているため、Modを追加できませんでした。");
+					continue;
 			}
+			switch (modDirectories.Where(e => e.Name == "audio").Count()) {
+				case 0:
+					MessageBox.Show("audioフォルダーが見つかりませんでした。");
+					break;
+				case 1:
+					break;
+				default:
+					MessageBox.Show("audioフォルダー2つ以上あるんだが？");
+					continue;
+			}*/
+
+
+
+			//foreach (DirectoryInfo audiodInfo in audioDirectories) {
+			//	string input = ShowModForm("modify!!!");
+			//	if (input == null) {
+			//		return;
+			//	}
+			//	string copyFolder = Path.Combine(settings.Workspace, "audio", input);
+			//	DirectoryCopy(audiodInfo.FullName, copyFolder);
+			//}
+
 		}
 
 
@@ -194,7 +158,7 @@ namespace WotModTools {
 		private void AudioApplyButton_Click(object sender, EventArgs e) {
 			string resAudioPath = Path.Combine(settings.WotDir, "res", "audio");
 			string res_modsAudioPath = Path.Combine(settings.WotDir, "res_mods", settings.WotVersion, "audio");
-			string workspaceAudioPath = Path.Combine(settings.Workspace, "audio", "Mako");
+			string workspaceAudioPath = Path.Combine(settings.Mods, "audio", "Mako");
 			//TODO 暫定でMako確定。後で選択処理を入れる。
 
 			HardLinks(res_modsAudioPath, resAudioPath);
@@ -289,28 +253,7 @@ namespace WotModTools {
 
 
 
-		//丸パクリなのでちゃんとチェックして修正。
-		public static void DirectoryCopy(string sourcePath, string destinationPath) {
-			DirectoryInfo sourceDirectory = new DirectoryInfo(sourcePath);
-			DirectoryInfo destinationDirectory = new DirectoryInfo(destinationPath);
-
-			//コピー先のディレクトリがなければ作成する
-			if (destinationDirectory.Exists == false) {
-				destinationDirectory.Create();
-				destinationDirectory.Attributes = sourceDirectory.Attributes;
-			}
-
-			//ファイルのコピー
-			foreach (FileInfo fileInfo in sourceDirectory.GetFiles()) {
-				//同じファイルが存在していたら、常に上書きする
-				fileInfo.CopyTo(destinationDirectory.FullName + @"\" + fileInfo.Name, true);
-			}
-
-			//ディレクトリのコピー（再帰を使用）
-			foreach (System.IO.DirectoryInfo directoryInfo in sourceDirectory.GetDirectories()) {
-				DirectoryCopy(directoryInfo.FullName, destinationDirectory.FullName + @"\" + directoryInfo.Name);
-			}
-		}
+		
 
 		private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e) {
 		}
@@ -340,10 +283,28 @@ namespace WotModTools {
 		private void button3_Click(object sender, EventArgs e) {
 		}
 
+
 		private void fileSystemWatcher1_Changed(object sender, FileSystemEventArgs e) {
 			ReloadModList();
 		}
+
+		//メインを閉じたら全部閉じる
+		private void OpenForm(Form form) {
+			openingFormList.Add(form);
+			form.ShowDialog();
+			return;
+		}
+		private void CloseForm(Form form) {
+			form.Close();
+			openingFormList.Remove(form);
+			return;
+		}
+		private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
+			openingFormList.ForEach(form => form.Close());
+		}
 	}
+
+
 }
 
 
@@ -354,3 +315,4 @@ namespace WotModTools {
 	TODO D&D以外でフォルダ選択、参照したいんだが？
 */
 //TODO 取り込んだModの削除も実装したい
+//フォルダーとかは最初に初期化してしまったほうがいいか。modsとかで乗り切るのはよろしくない気がする。

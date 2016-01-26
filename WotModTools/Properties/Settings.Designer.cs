@@ -8,6 +8,8 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using System.IO;
+
 namespace WotModTools.Properties {
     
     
@@ -37,13 +39,15 @@ namespace WotModTools.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("workspace\\")]
-        public string Workspace {
+        [global::System.Configuration.DefaultSettingValueAttribute("mods\\")]
+        public string Mods {
             get {
-                return ((string)(this["Workspace"]));
+				Directory.CreateDirectory((string)(this["Mods"]));
+				return ((string)(this["Mods"]));
             }
             set {
-                this["Workspace"] = value;
+				Directory.CreateDirectory((string)(this["Mods"]));
+                this["Mods"] = value;
             }
         }
         
@@ -56,18 +60,6 @@ namespace WotModTools.Properties {
             }
             set {
                 this["WotVersion"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string Setting {
-            get {
-                return ((string)(this["Setting"]));
-            }
-            set {
-                this["Setting"] = value;
             }
         }
     }
