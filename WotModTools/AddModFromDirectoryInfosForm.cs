@@ -11,7 +11,7 @@ using System.Windows.Forms;
 using static System.Environment;
 
 namespace WotModTools {
-	public partial class AddModFromDirectoryInfosForm : AddModForm {
+	public partial class AddModFromDirectoryInfosForm : InputModInfoForm {
 		public AddModFromDirectoryInfosForm(IEnumerable<DirectoryInfo> droppedDirectoryInfos) {
 		}
 

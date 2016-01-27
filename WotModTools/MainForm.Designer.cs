@@ -37,8 +37,8 @@
 			this.ModList = new System.Windows.Forms.CheckedListBox();
 			this.button2 = new System.Windows.Forms.Button();
 			this.directoryEntry1 = new System.DirectoryServices.DirectoryEntry();
-			this.fileSystemWatcher1 = new System.IO.FileSystemWatcher();
-			((System.ComponentModel.ISupportInitialize)(this.fileSystemWatcher1)).BeginInit();
+			this.modsFolderFileSystemWatcher = new System.IO.FileSystemWatcher();
+			((System.ComponentModel.ISupportInitialize)(this.modsFolderFileSystemWatcher)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// button1
@@ -128,12 +128,15 @@
 			this.button2.UseVisualStyleBackColor = false;
 			this.button2.Click += new System.EventHandler(this.SettingButton_Click);
 			// 
-			// fileSystemWatcher1
+			// modsFolderFileSystemWatcher
 			// 
-			this.fileSystemWatcher1.EnableRaisingEvents = true;
-			this.fileSystemWatcher1.IncludeSubdirectories = true;
-			this.fileSystemWatcher1.SynchronizingObject = this;
-			this.fileSystemWatcher1.Changed += new System.IO.FileSystemEventHandler(this.fileSystemWatcher1_Changed);
+			this.modsFolderFileSystemWatcher.EnableRaisingEvents = true;
+			this.modsFolderFileSystemWatcher.IncludeSubdirectories = true;
+			this.modsFolderFileSystemWatcher.SynchronizingObject = this;
+			this.modsFolderFileSystemWatcher.Changed += new System.IO.FileSystemEventHandler(this.modsFolderFileSystemWatcher_Changed);
+			this.modsFolderFileSystemWatcher.Created += new System.IO.FileSystemEventHandler(this.modsFolderFileSystemWatcher_Created);
+			this.modsFolderFileSystemWatcher.Deleted += new System.IO.FileSystemEventHandler(this.modsFolderFileSystemWatcher_Deleted);
+			this.modsFolderFileSystemWatcher.Renamed += new System.IO.RenamedEventHandler(this.modsFolderFileSystemWatcher_Renamed);
 			// 
 			// MainForm
 			// 
@@ -156,7 +159,7 @@
 			this.Load += new System.EventHandler(this.Form1_Load);
 			this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Form1_DragDrop);
 			this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Form1_DragEnter);
-			((System.ComponentModel.ISupportInitialize)(this.fileSystemWatcher1)).EndInit();
+			((System.ComponentModel.ISupportInitialize)(this.modsFolderFileSystemWatcher)).EndInit();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -173,7 +176,7 @@
 		private System.Windows.Forms.CheckedListBox ModList;
 		private System.Windows.Forms.Button button2;
 		private System.DirectoryServices.DirectoryEntry directoryEntry1;
-		private System.IO.FileSystemWatcher fileSystemWatcher1;
+		private System.IO.FileSystemWatcher modsFolderFileSystemWatcher;
 	}
 }
 

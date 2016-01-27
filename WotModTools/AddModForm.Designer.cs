@@ -1,5 +1,5 @@
 ﻿namespace WotModTools {
-	partial class AddModForm {
+	partial class InputModInfoForm {
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -24,7 +24,7 @@
 		/// </summary>
 		private void InitializeComponent() {
 			this.label1 = new System.Windows.Forms.Label();
-			this.FromFoldersLabel = new System.Windows.Forms.Label();
+			this.FromPathsLabel = new System.Windows.Forms.Label();
 			this.OKButton = new System.Windows.Forms.Button();
 			this.ToWhichTextBox = new System.Windows.Forms.TextBox();
 			this.button3 = new System.Windows.Forms.Button();
@@ -45,13 +45,13 @@
 			// 
 			// FromFoldersLabel
 			// 
-			this.FromFoldersLabel.AutoSize = true;
-			this.FromFoldersLabel.Location = new System.Drawing.Point(54, 98);
-			this.FromFoldersLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-			this.FromFoldersLabel.Name = "FromFoldersLabel";
-			this.FromFoldersLabel.Size = new System.Drawing.Size(69, 12);
-			this.FromFoldersLabel.TabIndex = 0;
-			this.FromFoldersLabel.Text = "FromFolders";
+			this.FromPathsLabel.AutoSize = true;
+			this.FromPathsLabel.Location = new System.Drawing.Point(54, 98);
+			this.FromPathsLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+			this.FromPathsLabel.Name = "FromFoldersLabel";
+			this.FromPathsLabel.Size = new System.Drawing.Size(69, 12);
+			this.FromPathsLabel.TabIndex = 0;
+			this.FromPathsLabel.Text = "FromFolders";
 			// 
 			// OKButton
 			// 
@@ -116,7 +116,7 @@
 			this.Controls.Add(this.button3);
 			this.Controls.Add(this.OKButton);
 			this.Controls.Add(this.label3);
-			this.Controls.Add(this.FromFoldersLabel);
+			this.Controls.Add(this.FromPathsLabel);
 			this.Controls.Add(this.label1);
 			this.Margin = new System.Windows.Forms.Padding(2);
 			this.Name = "AddModForm";
@@ -135,7 +135,7 @@
 		protected System.Windows.Forms.TextBox ToWhichTextBox;
 		protected System.Windows.Forms.TextBox ModNameTextBox;
 		protected System.Windows.Forms.FolderBrowserDialog ToWhichBrowserDialog;
-		protected System.Windows.Forms.Label FromFoldersLabel;
+		protected System.Windows.Forms.Label FromPathsLabel;
 		private System.Windows.Forms.Button OKButton;
 	}
 }

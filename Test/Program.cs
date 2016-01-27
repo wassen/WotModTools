@@ -4,16 +4,55 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Diagnostics;
 
 namespace Test {
 	class Program {
 		static void Main(string[] args) {
-			string a = @"C:\Users\Kazuki\Desktop\EpgDataCap_Bon";
-			string b = @"C:\Users\Kazuki\";
-			Console.WriteLine(a.Substring(b.Length,a.Length-b.Length));
+			string a = @"""C:\Users\Kazuki\Desktop\geton_1.02 - コピー""";
+			string b = @"""C:\Users\Kazuki\Desktop\新しいフォルダー (2)\asdf""";
+
+			var p = new Process();
+
+			p.StartInfo.FileName = "mklink";            // コマンド名
+			p.StartInfo.Arguments = @"/h ""C: \Users\Kazuki\Desktop\新しいフォルダー\asdf.jpg"" ""C: \Users\Kazuki\Desktop\50870432_p0.jpg""";               // 引数
+			p.StartInfo.CreateNoWindow = true;            // DOSプロンプトの黒い画面を非表示
+			p.StartInfo.UseShellExecute = true;          // プロセスを新しいウィンドウで起動するか否か
+			Stopwatch sw = new Stopwatch();
+			sw.Start();
+				
+			p.Start();
+			Console.WriteLine(sw.Elapsed);
+
 			Console.ReadKey();
 		}
 
+		public static string EncloseDoubleQuotes(string input) {
+			var reg = new Regex(@"^""?|""?$");
+			return reg.Replace(input, "\"", 2);
+		}
+
+		public static string DOSCmd(string command) {
+			Process p = OpenProcess(command);
+			p.Start();
+			string results = p.StandardOutput.ReadToEnd();
+			p.WaitForExit();
+			p.Close();
+			return results;
+		}
+
+		private static Process OpenProcess(string command) {
+			var p = new Process();
+			p.StartInfo.FileName = Environment.GetEnvironmentVariable("ComSpec");
+			//出力を読み取れるようにする
+			p.StartInfo.UseShellExecute = false;
+			p.StartInfo.RedirectStandardOutput = true;
+			p.StartInfo.RedirectStandardInput = false;
+			p.StartInfo.CreateNoWindow = true;
+			//"/c"は実行後閉じるために必要
+			p.StartInfo.Arguments = @"/c " + command;
+			return p;
+		}
 	}
 
 }
@@ -36,9 +75,9 @@ namespace Test {
 //\でsplitしてつなげる、前から切ってyield returnするなどで親ディレクトリのパターンを生成してマッチするか見る
 //再帰的に親ディレクトリ辿る => これだ。
 
-	//定期的にやっちゃうアホコード
-	//if (target == child)
-	//	return true;
-	//else {
-	//	return false;
-	//}
+//定期的にやっちゃうアホコード
+//if (target == child)
+//	return true;
+//else {
+//	return false;
+//}

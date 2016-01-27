@@ -24,26 +24,23 @@ namespace WotModTools {
 		}
 
 		//http://www.woodensoldier.info/computer/csharptips/73.htm
-		//ディレクトリのコピー
-		public static void DirectoryCopy(string sourcePath, string destinationPath) {
+		//の仕様を、destPathそのものを作成するのではなくdestpath内に作成するように変更(File.CopyやLinuxのコマンドの仕様)
+		//Directopy.Moveや、DOSコマンドのxcopyは確かにもともとの仕様だった。
+		//Hardlinksとかはバッチのほうがいいのか？
+		public static void DirectoryCopy(string sourcePath, string destPath) {
 			DirectoryInfo sourceDirectory = new DirectoryInfo(sourcePath);
-			DirectoryInfo destinationDirectory = new DirectoryInfo(destinationPath);
+			DirectoryInfo destinationDirectory = Directory.CreateDirectory(Path.Combine(destPath, Path.GetFileName(sourcePath)));
 
-			//コピー先のディレクトリがなければ作成する
-			if (destinationDirectory.Exists == false) {
-				destinationDirectory.Create();
-				destinationDirectory.Attributes = sourceDirectory.Attributes;
-			}
+			destinationDirectory.Attributes = sourceDirectory.Attributes;
 
-			//ファイルのコピー
 			foreach (FileInfo fileInfo in sourceDirectory.GetFiles()) {
 				//同じファイルが存在していたら、常に上書きする
-				fileInfo.CopyTo(destinationDirectory.FullName + @"\" + fileInfo.Name, true);
+				fileInfo.CopyTo(Path.Combine(destinationDirectory.FullName, fileInfo.Name), true);
 			}
 
 			//ディレクトリのコピー（再帰を使用）
-			foreach (System.IO.DirectoryInfo directoryInfo in sourceDirectory.GetDirectories()) {
-				DirectoryCopy(directoryInfo.FullName, destinationDirectory.FullName + @"\" + directoryInfo.Name);
+			foreach (DirectoryInfo directoryInfo in sourceDirectory.GetDirectories()) {
+				DirectoryCopy(directoryInfo.FullName, Path.Combine(destinationDirectory.FullName, directoryInfo.Name));
 			}
 		}
 
@@ -51,11 +48,31 @@ namespace WotModTools {
 			var reg = new Regex(@"\\?$");
 			return reg.Replace(path, @"\", 1);
 		}
-		public static string removeLastBackSlash(string path) {
+		public static string RemoveLastBackSlash(string path) {
 			return Regex.Replace(path, @"\\$", @"");
 		}
 
+		public static bool IsSamePath(string argDir1, string argDir2) {
+			return Program.AddLastBackSlash(argDir1) == Program.AddLastBackSlash(argDir2);
+		}
+
+		public static bool IsParentDir(string target, string child) {
+			IEnumerable<string> parents = GetParentDirectories(child);
+			foreach (string parent in parents) {
+				if (IsSamePath(target, parent)) return true;
+			}
+			return false;
+		}
+
+		public static IEnumerable<string> GetParentDirectories(string argDir) {
+			while (Path.GetPathRoot(argDir) != argDir) {
+				argDir = Path.GetDirectoryName(argDir);
+				yield return argDir;
+			}
+		}
 	}
+
+
 
 	//http://qiita.com/hugo-sb/items/f3afc94e7133e9c641a7
 	class STATask {
