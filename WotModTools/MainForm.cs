@@ -42,12 +42,22 @@ namespace WotModTools {
 		}
 
 		private void Form1_DragDrop(object sender, DragEventArgs e) {
-			string[] files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+			string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop, false);
 
-			IEnumerable<FileInfo> droppedFileInfoEnum = files.Where(item => File.Exists(item)).Select(item => new FileInfo(item));
-			IEnumerable<DirectoryInfo> droppedDirectoryInfoEnum = files.Where(item => Directory.Exists(item)).Select(item => new DirectoryInfo(item));
+			IEnumerable<FileInfo> droppedFileInfoEnum = paths.Where(item => File.Exists(item)).Select(item => new FileInfo(item));
+			IEnumerable<DirectoryInfo> droppedDirectoryInfoEnum = paths.Where(item => Directory.Exists(item)).Select(item => new DirectoryInfo(item));
 
 			STATask.Run(() => {
+				IEnumerable<string> parentFolderNames;
+				string modName = (parentFolderNames = paths.Select(path => Path.GetDirectoryName(path)).Distinct()).Count() == 1 ? parentFolderNames.First() : "";
+
+				var wfForm = new AddModForm(modName);
+
+				this.OpenForm(wfForm);
+				string from = wfForm.FromWhichFolder;
+				string to = wfForm.ToWhichFolder;
+				this.CloseForm(wfForm);
+
 				GetModFromFileInfo(droppedFileInfoEnum);
 				GetModFromDirectoryInfo(droppedDirectoryInfoEnum);
 			});
@@ -87,12 +97,7 @@ namespace WotModTools {
 
 			//audio,res_modsフォルダーに対する特殊処理は・・・こんどでいいや
 
-			var wfForm = new AddModFromDirectoryInfosForm(droppedDirectoryInfoEnum);
-
-			this.OpenForm(wfForm);
-			string from = wfForm.FromWhichFolder;
-			string to = wfForm.ToWhichFolder;
-			this.CloseForm(wfForm);
+			
 
 			return;
 			//IList<DirectoryInfo> modDirectories = droppedDirectoryInfo.GetDirectories("*", SearchOption.AllDirectories).ToList();
@@ -253,7 +258,7 @@ namespace WotModTools {
 
 
 
-		
+
 
 		private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e) {
 		}
