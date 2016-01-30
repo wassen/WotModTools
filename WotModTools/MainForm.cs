@@ -30,13 +30,9 @@ namespace WotModTools {
 			ModCheckedListBox.Items.Clear();
 
 			//求ム　IEnumerableからObjectCollectionへ変換
-			foreach (string modName in getModNameList()) {
+			foreach (string modName in Program.getModNameList()) {
 				ModCheckedListBox.Items.Add(modName);
 			}
-		}
-
-		private IEnumerable<string> getModNameList() {
-			return Directory.GetDirectories(settings.Mods).Select(directory => Path.GetFileName(directory));
 		}
 
 		private void Form1_DragEnter(object sender, DragEventArgs e) {
@@ -142,23 +138,29 @@ namespace WotModTools {
 		//string バージョンをどう扱うか・・・
 		//Modlistは設定ファイルを作る？
 		private void ApplyModButton_Click(object sender, EventArgs e) {
-			IEnumerable<string> modPaths = getSelectedModList();
+			IEnumerable<string> modPaths = getxheckedModPathList();
 
 			foreach (string modPath in modPaths) {
 				HardLinks(settings.WotDir, modPath);
 			}
 		}
 
-		private IEnumerable<string> getSelectedModList() {
-			ListBox.SelectedObjectCollection checkcedMod = ModCheckedListBox.SelectedItems;
-			IList<string> selectedModNameList = new List<string>();
-			foreach (Object selectedMod in checkcedMod) {
-				selectedModNameList.Add(selectedMod as string);
+		private IEnumerable<string> getSelectedModNameList() {
+			CheckedListBox.CheckedItemCollection checkcedMods = ModCheckedListBox.CheckedItems;
+			IList<string> checkedModNameList = new List<string>();
+			foreach (Object checkedMod in checkcedMods) {
+				checkedModNameList.Add(checkedMod as string);
 			}
-			if (selectedModNameList.Contains(null)) {
+			if (checkedModNameList.Contains(null)) {
 				throw new Exception();
 			}
-			return selectedModNameList.Select(modName => Path.Combine(settings.Mods, modName));
+			return checkedModNameList;
+		}
+
+		private IEnumerable<string> getcheckedModPathList() {
+			foreach (string modName in getSelectedModNameList()) {
+				yield return Path.Combine(settings.Mods, modName);
+			}
 		}
 
 
@@ -309,23 +311,26 @@ namespace WotModTools {
 			openingFormList.ForEach(form => form.Close());
 		}
 
+
 		private void button1_Click(object sender, EventArgs e) {
-			Directory.GetDirectories(settings.Mods).Select(directory => Path.GetFileName(directory));
-			Directory.GetFiles(settings.Mods, "*", SearchOption.AllDirectories);
+			IEnumerable<ModInfo> selectedModInfos = getSelectedModNameList().Select(selectedMod => new ModInfo(selectedMod));
 
-			foreach (string a in Directory.GetFiles(settings.Mods, "*", SearchOption.AllDirectories)) {
-				Console.WriteLine(a);
-			}
+			foreach (ModInfo selectedModInfo in selectedModInfos) {
+				//自分を除外した全ての要素でループ
 
-			foreach (string a in Directory.GetDirectories(settings.Mods).Select(directory => Path.GetFileName(directory))) {
-				Console.WriteLine(a);
+
+
+				foreach (ModInfo otherModInfo in selectedModInfos.Except(new ModInfo[] { selectedModInfo })) {
+					selectedModInfo.setConflictInfo(otherModInfo);
+				}
+				Console.WriteLine(selectedModInfo.conflictDict);
 			}
-			IList<string> modfilePathList = new List<string>();
 
 
 		}
 	}
 }
+
 
 /*
 	TODO ドラッグアンドドロップで、一つのファイルに複数のaudioがあった時の処理

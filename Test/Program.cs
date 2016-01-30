@@ -9,15 +9,22 @@ using System.Diagnostics;
 namespace Test {
 	class Program {
 		static void Main(string[] args) {
-			string a = @"C:\Users\Kazuki\Desktop\new";
-			string b = @"C:\Users\Kazuki\Desktop\new2";
+			string path1 = @"C:\Users\Kazuki\Desktop\new";
+			string path2 = @"C:\Users\Kazuki\Desktop\new2";
 
-			DirectoryCopy(b, a);
+			IList<int> a = new List<int> { 0, 1, 2, 3, 4 };
 
-			IList<string> c = new List<string>();
-			c.Add(null);
-			Console.WriteLine(c.Contains(null));
-
+			foreach (var c in a.Select((v, i) => new { v, i })) {
+				foreach (var b in a.Skip(0).Take(c.i).Concat(a.Skip(c.i+1).Take(a.Count()- c.i + 1))) {
+					Console.WriteLine(b);
+				}
+			}
+			Console.WriteLine();
+			foreach (var c in a) {
+				foreach (var b in a.Except(new int[]{ c })) {
+					Console.WriteLine(b);
+				}
+			}
 			Console.ReadKey();
 		}
 
@@ -26,31 +33,7 @@ namespace Test {
 			return reg.Replace(input, "\"", 2);
 		}
 
-		/**
-			<summary>
-			ディレクトリのコピー
-			</summary>
-		*/
-		public static void DirectoryCopy(string sourcePath, string destPath) {
-			DirectoryCopy(sourcePath, destPath, false);
-		}
-		
-		public static void DirectoryCopy(string sourcePath, string destPath, bool underDestination) {
 
-			DirectoryInfo sourceDirectory = new DirectoryInfo(sourcePath);
-			DirectoryInfo destDirectory = Directory.CreateDirectory(underDestination ? Path.Combine(destPath, sourceDirectory.Name) : destPath);
-
-			destDirectory.Attributes = sourceDirectory.Attributes;
-
-			foreach (FileInfo fi in sourceDirectory.GetFiles()) {
-				//常に上書き
-				fi.CopyTo(Path.Combine(destDirectory.FullName, fi.Name), true);
-			}
-
-			foreach (DirectoryInfo di in sourceDirectory.GetDirectories()) {
-				DirectoryCopy(di.FullName, destDirectory.FullName + @"\" + di.Name);
-			}
-		}
 	}
 
 }

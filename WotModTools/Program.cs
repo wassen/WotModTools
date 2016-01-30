@@ -23,6 +23,12 @@ namespace WotModTools {
 			Application.Run(new MainForm());
 		}
 
+
+		/**
+			<summary>
+			ディレクトリのコピー
+			</summary>
+		*/
 		public static void DirectoryCopy(string sourcePath, string destPath) {
 			DirectoryCopy(sourcePath, destPath, true);
 		}
@@ -38,7 +44,7 @@ namespace WotModTools {
 				fi.CopyTo(Path.Combine(destDirectory.FullName, fi.Name), true);
 			}
 			foreach (DirectoryInfo di in sourceDirectory.GetDirectories()) {
-				DirectoryCopy(di.FullName, destDirectory.FullName,true);
+				DirectoryCopy(di.FullName, destDirectory.FullName, true);
 			}
 		}
 
@@ -70,12 +76,25 @@ namespace WotModTools {
 		}
 
 		public static string deleteHeadPath(string longPath, string shortPath) {
+			if (longPath.Length < shortPath.Length) {
+				return null;
+			}
 			longPath = Program.AddLastBackSlash(longPath);
 			shortPath = Program.AddLastBackSlash(shortPath);
-
 			return longPath.Substring(shortPath.Length, longPath.Length - shortPath.Length);
 		}
+
+		//staticでproperties使って大丈夫？
+		public static IEnumerable<string> getModNameList() {
+			foreach (string modName in Directory.GetDirectories(Properties.Settings.Default.Mods){
+				yield return Path.GetFileName(modName);
+			}
+		}
+
+		
 	}
+
+
 
 
 
@@ -102,6 +121,59 @@ namespace WotModTools {
 				return true;
 			});
 		}
+
+
+
+	}
+	static class Tools<T> {
+		public static IEnumerable<T> roopExcept1(IEnumerable<T> ts) {
+			foreach (var t in ts.Select((v, i) => new { v, i })) {
+				foreach (var b in ts.Skip(0).Take(t.i).Concat(ts.Skip(t.i + 1).Take(ts.Count() - t.i + 1))) {
+					yield return b;
+				}
+			}
+		}
+	}
+
+	class ModInfo {
+		private string modName;
+
+		public IList<string> fullFilePaths { get; set; }
+		public IList<string> filePathsInWot { get; set; }
+		public IDictionary<string, IEnumerable<string>> conflictDict { get; set; }
+
+		public ModInfo(string modName) {
+			this.modName = modName;
+			IEnumerable<string> modNameList = Program.getModNameList();
+			conflictDict = new Dictionary<string, IEnumerable<string>>();
+			string modPath = Path.Combine(Properties.Settings.Default.Mods, modName);
+			fullFilePaths = Directory.GetFiles(modPath, "*", SearchOption.AllDirectories);
+			filePathsInWot = fullFilePaths.Select(fullFilePath => Program.deleteHeadPath(fullFilePath, modPath)).ToList();
+
+			if (!modNameList.Contains(modName)) {
+				throw new Exception();
+			}
+			if (filePathsInWot.Distinct().Count() != filePathsInWot.Count()) {
+				throw new Exception();
+			}
+
+
+		}
+
+		public override bool Equals(object obj) {
+			ModInfo arg = obj as ModInfo;
+			return !(arg == null || arg.modName != this.modName);
+		}
+
+		public void setConflictInfo(ModInfo otherModInfo) {
+			if (filePathsInWot.Distinct().Count() != filePathsInWot.Count()) {
+				Console.WriteLine("eroroeroeoroeeeeooo");
+			}
+			conflictDict.Add(otherModInfo.modName, this.filePathsInWot.Intersect(otherModInfo.filePathsInWot));
+		}
+
+
+
 	}
 }
 
