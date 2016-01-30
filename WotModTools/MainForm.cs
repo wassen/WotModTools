@@ -24,13 +24,16 @@ namespace WotModTools {
 		}
 
 		private void ReloadModList() {
-			ModList.Items.Clear();
+			ModCheckedListBox.Items.Clear();
 
-			IEnumerable<string> modNameList = Directory.GetDirectories(settings.Mods).Select(directory => Path.GetFileName(directory));
 			//求ム　IEnumerableからObjectCollectionへ変換
-			foreach (string modName in modNameList) {
-				ModList.Items.Add(modName);
+			foreach (string modName in getModNameList()) {
+				ModCheckedListBox.Items.Add(modName);
 			}
+		}
+
+		private IEnumerable<string> getModNameList() {
+			return Directory.GetDirectories(settings.Mods).Select(directory => Path.GetFileName(directory));
 		}
 
 		private void Form1_DragEnter(object sender, DragEventArgs e) {
@@ -128,12 +131,23 @@ namespace WotModTools {
 		private void AudioApplyButton_Click(object sender, EventArgs e) {
 			string resAudioPath = Path.Combine(settings.WotDir, "res", "audio");
 			string res_modsAudioPath = Path.Combine(settings.WotDir, "res_mods", settings.WotVersion, "audio");
-			string workspaceAudioPath = Path.Combine(settings.Mods, "audio", "Mako");
+			//string バージョンをどう扱うか・・・
+			//Modlistは設定ファイルを作るか？
+			string[] modPaths = Directory.GetDirectories(settings.Mods);
 			//TODO 暫定でMako確定。後で選択処理を入れる。
 
+			ListBox.SelectedObjectCollection checkcedMod = ModCheckedListBox.SelectedItems;
+			for (ListBox.ObjectCollection )
+			
 			HardLinks(res_modsAudioPath, resAudioPath);
-			HardLinks(res_modsAudioPath, workspaceAudioPath);
+			foreach (string modPath in modPaths) {
+				HardLinks(res_modsAudioPath, modPath);
+			}
+
 		}
+
+
+
 
 		/**
 			<summary>
@@ -166,6 +180,7 @@ namespace WotModTools {
 				Directory.CreateDirectory(Path.Combine(linkDir, folderName));
 			}
 
+			Process dosCmd = OpenDosCmdProcess();
 			foreach (string file in fileList) {
 				//最初に現れたtargetDirをfolderから''に置換
 				string fileName = targetReg.Replace(file, @"", 1);
@@ -176,9 +191,16 @@ namespace WotModTools {
 					Console.WriteLine("sakujo");
 				}
 				//存在してる時にMklinkしても何も起こらないハズ
-				
-				Mklink("/H", Path.Combine(linkDir, fullLink), file);
+				IList<string> commandList = new List<string>();
+				commandList.Add("mklink");
+				commandList.Add("/h");
+				commandList.Add(Path.Combine(linkDir, fullLink));
+				commandList.Add(file);
+
+				executeDosCmd(dosCmd, String.Join(" ", commandList));
 			}
+			dosCmd.WaitForExit();
+			dosCmd.Close();
 		}
 		/*
 			XXX ディレクトリがバックスラッシュじゃなくてスラッシュだったらどうしよう・・・入出力の段階で全て統一したい。
@@ -196,41 +218,29 @@ namespace WotModTools {
 			<param name="targetDir">リンクの参照元となるディレクトリ</param>
 			TODO フォルダ名に';'が含まれてるとリンクが作られなかったため要調査
 		*/
-		public void Mklink(string type, string linkDir, string targetDir) {
-			var p = new Process();
-			p.StartInfo.FileName = Environment.GetEnvironmentVariable("ComSpec");
-			////出力を読み取れるようにする
-			p.StartInfo.UseShellExecute = false;
-			//p.StartInfo.RedirectStandardOutput = true;
-			p.StartInfo.RedirectStandardInput = false;
-			//ウィンドウを表示しないようにする
-			p.StartInfo.CreateNoWindow = true;
-			//コマンドラインを指定（"/c"は実行後閉じるために必要
-
-			p.StartInfo.Arguments = @"/c mklink " + type + " " + linkDir + " " + targetDir;
-
+		public void executeDosCmd(Process p, string command) {
+			//"/c"は実行後閉じるために必要
+			p.StartInfo.Arguments = @"/c " + command;
 			p.Start();
-			//出力を読み取る
-			//string results = p.StandardOutput.ReadToEnd();
-
-			p.WaitForExit();
-
-			p.Close();
-
-			//Console.WriteLine(@"/c mklink " + type + @" " + linkDir + @" " + targetDir);
-			//Console.WriteLine(results);
-
 		}
+		public void DosCmd(Process p, IEnumerable<string> commandList) {
+			//"/c"は実行後閉じるために必要
+			p.StartInfo.Arguments = @"/c " + String.Join(" ", commandList);
+			p.Start();
+		}
+
 		//何回もcloseするのは効率が悪い気もする
 		//ハードリンクのところで時間がかかるようなら、メソッド化せずに書いていちいちcloseしないことも検討
 
-
-
-
-
-
-
-
+		private static Process OpenDosCmdProcess() {
+			var p = new Process();
+			p.StartInfo.FileName = Environment.GetEnvironmentVariable("ComSpec");
+			p.StartInfo.UseShellExecute = false;
+			//p.StartInfo.RedirectStandardOutput = true;
+			p.StartInfo.RedirectStandardInput = false;
+			p.StartInfo.CreateNoWindow = true;
+			return p;
+		}
 
 		private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e) {
 		}
@@ -302,3 +312,8 @@ namespace WotModTools {
 //enumでエラーを返す
 //フォルダー内のModっぽいフォルダーを探索、なければ、ツリーを表示してどれがModか、どのディレクトリに入れるのかを聞く
 //audio,res_modsフォルダーに対する特殊処理は・・・こんどでいいや
+
+//既にModがあるとき、それを避けてできる？
+//progressbarの実装
+//copyとhardlink
+//Modの一部削除(被りの記録)
