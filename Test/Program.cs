@@ -9,8 +9,10 @@ using System.Diagnostics;
 namespace Test {
 	class Program {
 		static void Main(string[] args) {
-			string a = @"""C:\Users\Kazuki\Desktop\geton_1.02 - コピー""";
-			string b = @"""C:\Users\Kazuki\Desktop\新しいフォルダー (2)\asdf""";
+			string a = @"C:\Users\Kazuki\Desktop\new";
+			string b = @"C:\Users\Kazuki\Desktop\new2";
+
+			DirectoryCopy(b, a);
 
 			IList<string> c = new List<string>();
 			c.Add(null);
@@ -24,6 +26,31 @@ namespace Test {
 			return reg.Replace(input, "\"", 2);
 		}
 
+		/**
+			<summary>
+			ディレクトリのコピー
+			</summary>
+		*/
+		public static void DirectoryCopy(string sourcePath, string destPath) {
+			DirectoryCopy(sourcePath, destPath, false);
+		}
+		
+		public static void DirectoryCopy(string sourcePath, string destPath, bool underDestination) {
+
+			DirectoryInfo sourceDirectory = new DirectoryInfo(sourcePath);
+			DirectoryInfo destDirectory = Directory.CreateDirectory(underDestination ? Path.Combine(destPath, sourceDirectory.Name) : destPath);
+
+			destDirectory.Attributes = sourceDirectory.Attributes;
+
+			foreach (FileInfo fi in sourceDirectory.GetFiles()) {
+				//常に上書き
+				fi.CopyTo(Path.Combine(destDirectory.FullName, fi.Name), true);
+			}
+
+			foreach (DirectoryInfo di in sourceDirectory.GetDirectories()) {
+				DirectoryCopy(di.FullName, destDirectory.FullName + @"\" + di.Name);
+			}
+		}
 	}
 
 }

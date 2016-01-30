@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Threading;
 
 namespace WotModTools {
+
 	public partial class MainForm : Form {
 
 		private List<Form> openingFormList;
@@ -20,7 +21,9 @@ namespace WotModTools {
 			this.settings = Properties.Settings.Default;
 			this.openingFormList = new List<Form>();
 			modsFolderFileSystemWatcher.Path = settings.Mods;
+			AudioApplyButton.Text = @"res\audio=>res_mods\" + settings.WotVersion + @"\audio";
 			ReloadModList();
+
 		}
 
 		private void ReloadModList() {
@@ -44,7 +47,7 @@ namespace WotModTools {
 		}
 
 		private void Form1_DragDrop(object sender, DragEventArgs e) {
-			string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+			string[] paths = ((string[])e.Data.GetData(DataFormats.FileDrop, false));
 
 			STATask.Run(() => {
 				var wfForm = new InputModInfoForm(paths);
@@ -131,22 +134,32 @@ namespace WotModTools {
 		private void AudioApplyButton_Click(object sender, EventArgs e) {
 			string resAudioPath = Path.Combine(settings.WotDir, "res", "audio");
 			string res_modsAudioPath = Path.Combine(settings.WotDir, "res_mods", settings.WotVersion, "audio");
-			//string バージョンをどう扱うか・・・
-			//Modlistは設定ファイルを作るか？
-			string[] modPaths = Directory.GetDirectories(settings.Mods);
-			//TODO 暫定でMako確定。後で選択処理を入れる。
 
-			ListBox.SelectedObjectCollection checkcedMod = ModCheckedListBox.SelectedItems;
-			for (ListBox.ObjectCollection )
-			
 			HardLinks(res_modsAudioPath, resAudioPath);
-			foreach (string modPath in modPaths) {
-				HardLinks(res_modsAudioPath, modPath);
-			}
-
 		}
 
 
+		//string バージョンをどう扱うか・・・
+		//Modlistは設定ファイルを作る？
+		private void ApplyModButton_Click(object sender, EventArgs e) {
+			IEnumerable<string> modPaths = getSelectedModList();
+
+			foreach (string modPath in modPaths) {
+				HardLinks(settings.WotDir, modPath);
+			}
+		}
+
+		private IEnumerable<string> getSelectedModList() {
+			ListBox.SelectedObjectCollection checkcedMod = ModCheckedListBox.SelectedItems;
+			IList<string> selectedModNameList = new List<string>();
+			foreach (Object selectedMod in checkcedMod) {
+				selectedModNameList.Add(selectedMod as string);
+			}
+			if (selectedModNameList.Contains(null)) {
+				throw new Exception();
+			}
+			return selectedModNameList.Select(modName => Path.Combine(settings.Mods, modName));
+		}
 
 
 		/**
@@ -296,10 +309,22 @@ namespace WotModTools {
 			openingFormList.ForEach(form => form.Close());
 		}
 
+		private void button1_Click(object sender, EventArgs e) {
+			Directory.GetDirectories(settings.Mods).Select(directory => Path.GetFileName(directory));
+			Directory.GetFiles(settings.Mods, "*", SearchOption.AllDirectories);
 
+			foreach (string a in Directory.GetFiles(settings.Mods, "*", SearchOption.AllDirectories)) {
+				Console.WriteLine(a);
+			}
+
+			foreach (string a in Directory.GetDirectories(settings.Mods).Select(directory => Path.GetFileName(directory))) {
+				Console.WriteLine(a);
+			}
+			IList<string> modfilePathList = new List<string>();
+
+
+		}
 	}
-
-
 }
 
 /*

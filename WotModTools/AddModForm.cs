@@ -110,6 +110,7 @@ namespace WotModTools {
 		//関係ない愚痴 バツボタンの挙動Cancelも用意しないとバツボタンを押すと強制OKとなる。✕押してるのにOKとは。なんでわざわざ同じ機能を持つボタンを用意せにゃならんのだ。YesNoならバツボタンが消える模様。
 		//Visual Studioの"コードが実行されているときは、変更が許可されません"がうざい
 
+
 		private void AddModForm_Load(object sender, EventArgs e) {
 
 		}

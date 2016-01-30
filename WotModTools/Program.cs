@@ -23,24 +23,22 @@ namespace WotModTools {
 			Application.Run(new MainForm());
 		}
 
-		//http://www.woodensoldier.info/computer/csharptips/73.htm
-		//の仕様を、destPathそのものを作成するのではなくdestpath内に作成するように変更(File.CopyやLinuxのコマンドの仕様)
-		//Directopy.Moveや、DOSコマンドのxcopyは確かにもともとの仕様だった。
-		//Hardlinksとかはバッチのほうがいいのか？
 		public static void DirectoryCopy(string sourcePath, string destPath) {
-			DirectoryInfo sourceDirectory = new DirectoryInfo(sourcePath);
-			DirectoryInfo destinationDirectory = Directory.CreateDirectory(Path.Combine(destPath, Path.GetFileName(sourcePath)));
+			DirectoryCopy(sourcePath, destPath, true);
+		}
 
-			destinationDirectory.Attributes = sourceDirectory.Attributes;
+		public static void DirectoryCopy(string sourcePath, string destPath, bool underDestination) {
+			var sourceDirectory = new DirectoryInfo(sourcePath);
+			DirectoryInfo destDirectory = Directory.CreateDirectory(underDestination ? Path.Combine(destPath, sourceDirectory.Name) : destPath);
 
-			foreach (FileInfo fileInfo in sourceDirectory.GetFiles()) {
-				//同じファイルが存在していたら、常に上書きする
-				fileInfo.CopyTo(Path.Combine(destinationDirectory.FullName, fileInfo.Name), true);
+			destDirectory.Attributes = sourceDirectory.Attributes;
+
+			foreach (FileInfo fi in sourceDirectory.GetFiles()) {
+				//常に上書き
+				fi.CopyTo(Path.Combine(destDirectory.FullName, fi.Name), true);
 			}
-
-			//ディレクトリのコピー（再帰を使用）
-			foreach (DirectoryInfo directoryInfo in sourceDirectory.GetDirectories()) {
-				DirectoryCopy(directoryInfo.FullName, Path.Combine(destinationDirectory.FullName, directoryInfo.Name));
+			foreach (DirectoryInfo di in sourceDirectory.GetDirectories()) {
+				DirectoryCopy(di.FullName, destDirectory.FullName,true);
 			}
 		}
 
@@ -69,6 +67,13 @@ namespace WotModTools {
 				argDir = Path.GetDirectoryName(argDir);
 				yield return argDir;
 			}
+		}
+
+		public static string deleteHeadPath(string longPath, string shortPath) {
+			longPath = Program.AddLastBackSlash(longPath);
+			shortPath = Program.AddLastBackSlash(shortPath);
+
+			return longPath.Substring(shortPath.Length, longPath.Length - shortPath.Length);
 		}
 	}
 

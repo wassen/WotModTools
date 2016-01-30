@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-			this.button1 = new System.Windows.Forms.Button();
+			this.AudioApplyButton = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
 			this.button3 = new System.Windows.Forms.Button();
 			this.listBox3 = new System.Windows.Forms.ListBox();
@@ -38,20 +38,22 @@
 			this.modsFolderFileSystemWatcher = new System.IO.FileSystemWatcher();
 			this.consoleBox = new System.Windows.Forms.ListBox();
 			this.label3 = new System.Windows.Forms.Label();
+			this.ApplyModButton = new System.Windows.Forms.Button();
+			this.button1 = new System.Windows.Forms.Button();
 			((System.ComponentModel.ISupportInitialize)(this.modsFolderFileSystemWatcher)).BeginInit();
 			this.SuspendLayout();
 			// 
-			// button1
+			// AudioApplyButton
 			// 
-			this.button1.AutoSize = true;
-			this.button1.Location = new System.Drawing.Point(329, 321);
-			this.button1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-			this.button1.Name = "button1";
-			this.button1.Size = new System.Drawing.Size(132, 38);
-			this.button1.TabIndex = 0;
-			this.button1.Text = "VoiceModの適用";
-			this.button1.UseVisualStyleBackColor = true;
-			this.button1.Click += new System.EventHandler(this.AudioApplyButton_Click);
+			this.AudioApplyButton.AutoSize = true;
+			this.AudioApplyButton.Location = new System.Drawing.Point(276, 346);
+			this.AudioApplyButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+			this.AudioApplyButton.Name = "AudioApplyButton";
+			this.AudioApplyButton.Size = new System.Drawing.Size(247, 38);
+			this.AudioApplyButton.TabIndex = 0;
+			this.AudioApplyButton.Text = "res\\audio=>res_mods\\version\\audio";
+			this.AudioApplyButton.UseVisualStyleBackColor = true;
+			this.AudioApplyButton.Click += new System.EventHandler(this.AudioApplyButton_Click);
 			// 
 			// label1
 			// 
@@ -95,7 +97,6 @@
 			this.ModCheckedListBox.Name = "ModCheckedListBox";
 			this.ModCheckedListBox.Size = new System.Drawing.Size(179, 242);
 			this.ModCheckedListBox.TabIndex = 12;
-			this.ModCheckedListBox.SelectedIndexChanged += new System.EventHandler(this.ModCheckedListBox_SelectedIndexChanged);
 			// 
 			// button2
 			// 
@@ -124,7 +125,7 @@
 			// 
 			this.consoleBox.FormattingEnabled = true;
 			this.consoleBox.ItemHeight = 15;
-			this.consoleBox.Location = new System.Drawing.Point(155, 428);
+			this.consoleBox.Location = new System.Drawing.Point(158, 427);
 			this.consoleBox.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
 			this.consoleBox.Name = "consoleBox";
 			this.consoleBox.Size = new System.Drawing.Size(569, 94);
@@ -141,14 +142,36 @@
 			this.label3.TabIndex = 8;
 			this.label3.Text = "通知とかそんな感じ";
 			// 
+			// ApplyModButton
+			// 
+			this.ApplyModButton.Location = new System.Drawing.Point(547, 298);
+			this.ApplyModButton.Name = "ApplyModButton";
+			this.ApplyModButton.Size = new System.Drawing.Size(104, 79);
+			this.ApplyModButton.TabIndex = 14;
+			this.ApplyModButton.Text = "Mod適用";
+			this.ApplyModButton.UseVisualStyleBackColor = true;
+			this.ApplyModButton.Click += new System.EventHandler(this.ApplyModButton_Click);
+			// 
+			// button1
+			// 
+			this.button1.Location = new System.Drawing.Point(366, 209);
+			this.button1.Name = "button1";
+			this.button1.Size = new System.Drawing.Size(75, 23);
+			this.button1.TabIndex = 15;
+			this.button1.Text = "button1";
+			this.button1.UseVisualStyleBackColor = true;
+			this.button1.Click += new System.EventHandler(this.button1_Click);
+			// 
 			// MainForm
 			// 
 			this.AllowDrop = true;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(740, 552);
-			this.Controls.Add(this.ModCheckedListBox);
 			this.Controls.Add(this.button1);
+			this.Controls.Add(this.ApplyModButton);
+			this.Controls.Add(this.ModCheckedListBox);
+			this.Controls.Add(this.AudioApplyButton);
 			this.Controls.Add(this.button2);
 			this.Controls.Add(this.listBox3);
 			this.Controls.Add(this.button3);
@@ -170,7 +193,7 @@
 
         #endregion
 
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button AudioApplyButton;
 		private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Button button3;
 		private System.Windows.Forms.ListBox listBox3;
@@ -180,6 +203,8 @@
 		private System.IO.FileSystemWatcher modsFolderFileSystemWatcher;
 		private System.Windows.Forms.Label label3;
 		private System.Windows.Forms.ListBox consoleBox;
+		private System.Windows.Forms.Button ApplyModButton;
+		private System.Windows.Forms.Button button1;
 	}
 }
 
