@@ -86,7 +86,7 @@ namespace WotModTools {
 		}
 
 		//staticでproperties使って大丈夫？
-		public static IEnumerable<string> getModNameList() {
+		internal static IEnumerable<string> getModFolderList() {
 			foreach (string modName in Directory.GetDirectories(Properties.Settings.Default.Mods)){
 				yield return Path.GetFileName(modName);
 			}
@@ -151,7 +151,7 @@ namespace WotModTools {
 
 		public ModInfo(string modName) {
 			this.modName = modName;
-			IEnumerable<string> modNameList = Program.getModNameList();
+			IEnumerable<string> modNameList = Program.getModFolderList();
 			conflictDict = new Dictionary<string, IEnumerable<string>>();
 			string modPath = Path.Combine(Properties.Settings.Default.Mods, modName);
 			fullFilePaths = Directory.GetFiles(modPath, "*", SearchOption.AllDirectories);

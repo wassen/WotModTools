@@ -31,13 +31,30 @@ namespace WotModTools {
 			sw.Start();
 		}
 		private void LoadModList() {
-			ModCheckedListBox.Items.Clear();
+
+			IEnumerable<string> oldMods = getAllModNameList();
+			IEnumerable<string> newMods = Program.getModFolderList();
 
 			//求ム　IEnumerableからObjectCollectionへ変換
-			foreach (string modName in Program.getModNameList()) {
-				ModCheckedListBox.Items.Add(modName);
+
+			IList<int> indexList = new List<int>();
+			foreach (var item in oldMods.Except(newMods).Select((deletedModName, i) => new { deletedModName, i })) {
+				//oldMods.Where((v, i) => new { v, i })で実装できないか
+				if (oldMods.Contains(item.deletedModName)) indexList.Add(item.i);
 			}
+
+			foreach (var index in indexList) {
+				ModCheckedListBox.Items.RemoveAt(index);
+			}
+
+			foreach (string addedModName in newMods.Except(oldMods)) {
+				ModCheckedListBox.Items.Add(addedModName);
+			}
+
+
+
 		}
+
 		private void ReloadModList() {
 
 			if (anyRunningTask()) return;
@@ -178,20 +195,19 @@ namespace WotModTools {
 			}
 			runTaskList.Clear();
 
-			IEnumerable<string> modPaths = getcheckedModPathList();
+			IEnumerable<string> modPaths = getCheckedModPathList();
 
 			foreach (string modPath in modPaths) {
 				FileSystem.CopyDirectory(modPath, settings.WotDir, UIOption.AllDialogs);
 			}
 		}
 
-		private IEnumerable<string> getCheckedModNameList() {
-			CheckedListBox.CheckedItemCollection checkcedMods = ModCheckedListBox.CheckedItems;
-			IList<string> checkedModNameList = new List<string>();
-			foreach (Object checkedModObj in checkcedMods) {
-				string checkedModName;
-				if ((checkedModName = checkedModObj as string) != null) {
-					yield return checkedModName;
+		private IEnumerable<string> getAllModNameList() {
+			CheckedListBox.ObjectCollection allMods = ModCheckedListBox.Items;
+			foreach (Object allModObj in allMods) {
+				string allModName;
+				if ((allModName = allModObj as string) != null) {
+					yield return allModName;
 				}
 				else {
 					throw new Exception();
@@ -199,7 +215,14 @@ namespace WotModTools {
 			}
 		}
 
-		private IEnumerable<string> getcheckedModPathList() {
+		private IEnumerable<string> getCheckedModNameList() {
+			CheckedListBox.CheckedItemCollection checkcedMods = ModCheckedListBox.CheckedItems;
+			foreach (Object checkedModObj in checkcedMods) {
+				yield return ModCheckedListBox.GetItemText(checkedModObj);
+			}
+		}
+
+		private IEnumerable<string> getCheckedModPathList() {
 			foreach (string modName in getCheckedModNameList()) {
 				yield return Path.Combine(settings.Mods, modName);
 			}
@@ -373,8 +396,8 @@ namespace WotModTools {
 		//http://www.kisoplus.com/sample2/sub/listbox.html 参考
 		private void ModCheckedListBox_MouseDown(object sender, MouseEventArgs e) {
 
-		    var draggedPoint = new Point(e.X,e.Y);
-			int indexUnderDrag = ModCheckedListBox.IndexFromPoint(draggedPoint);
+			//こちらのeはクライアント画面に対して
+			int indexUnderDrag = ModCheckedListBox.IndexFromPoint(new Point(e.X, e.Y));
 			if (indexUnderDrag > -1) {
 				//第一引数のdataとしてintで渡したところ、取り出しかたがわからなかった。
 				ModCheckedListBox.DoDragDrop(indexUnderDrag.ToString(), DragDropEffects.Copy);//ドラッグスタート
@@ -384,18 +407,23 @@ namespace WotModTools {
 			e.Effect = DragDropEffects.Copy;
 		}
 		private void ModCheckedListBox_DragDrop(object sender, DragEventArgs e) {
+			CheckedListBox mclb = ModCheckedListBox;
 
 			int indexUnderDrag = int.Parse((string)e.Data.GetData(DataFormats.Text));
-            string draggedModName = ModCheckedListBox.Items[indexUnderDrag] as string;
+			//こちらのeは画面の全体に対して
+			int indexUnderDrop = mclb.IndexFromPoint(mclb.PointToClient(new Point(e.X, e.Y)));
 
-			var droppedPoint = new Point(e.X, e.Y);
-			int indexUnderDrop = ModCheckedListBox.IndexFromPoint(ModCheckedListBox.PointToClient(droppedPoint));
-			string droppedModName = ModCheckedListBox.Items[indexUnderDrop] as string;
-			
-			if (-1 < indexUnderDrop && indexUnderDrop < ModCheckedListBox.Items.Count) {
-				ModCheckedListBox.Items[indexUnderDrag] = droppedModName;
-				ModCheckedListBox.Items[indexUnderDrop] = draggedModName;
-            }
+			if (-1 < indexUnderDrop && indexUnderDrop < mclb.Items.Count) {
+				string draggedModName = mclb.Items[indexUnderDrag] as string;
+				string droppedModName = mclb.Items[indexUnderDrop] as string;
+				mclb.Items[indexUnderDrag] = droppedModName;
+				mclb.Items[indexUnderDrop] = draggedModName;
+
+				CheckState draggedState = mclb.GetItemCheckState(indexUnderDrag);
+				CheckState droppedState = mclb.GetItemCheckState(indexUnderDrop);
+				mclb.SetItemCheckState(indexUnderDrag, droppedState);
+				mclb.SetItemCheckState(indexUnderDrop, draggedState);
+			}
 		}
 	}
 }
