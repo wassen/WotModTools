@@ -35,7 +35,8 @@ namespace WotModTools {
 		private void LoadModList() {
 			//getAllModNameListはforeachの最中にyield returnしているため、途中でModChechedListBoxを変更するところでバグる。
 			//Listのコンストラクタに突っ込んで初期化してるが、メソッド側をIListとかに集めてから返すように変更することも検討
-			IEnumerable<string> oldModsName = new List<string>(getAllModNameList());
+			//修正済み
+			IEnumerable<string> oldModsName = getAllModNameList();
 			IEnumerable<string> newModsName = Program.getModFolderList();
 			CheckedListBox oldModList = ModCheckedListBox;
 			//求ム　IEnumerableからObjectCollectionへ変換
@@ -217,29 +218,25 @@ namespace WotModTools {
 
 		private IEnumerable<string> getAllModNameList() {
 			CheckedListBox.ObjectCollection allMods = ModCheckedListBox.Items;
+			IList<string> allModList = new List<string>();
 			foreach (Object allModObj in allMods) {
-				string allModName;
-				if ((allModName = allModObj as string) != null) {
-					yield return allModName;
-				}
-				else {
-					throw new Exception();
-				}
+				allModList.Add(ModCheckedListBox.GetItemText(allModObj));
 			}
+			return allModList;
 
 		}
 
 		private IEnumerable<string> getCheckedModNameList() {
 			CheckedListBox.CheckedItemCollection checkcedMods = ModCheckedListBox.CheckedItems;
+			IList<string> checkcedModList = new List<string>();
 			foreach (Object checkedModObj in checkcedMods) {
-				yield return ModCheckedListBox.GetItemText(checkedModObj);
+				checkcedModList.Add(ModCheckedListBox.GetItemText(checkedModObj));
 			}
+			return checkcedModList;
 		}
 
 		private IEnumerable<string> getCheckedModPathList() {
-			foreach (string modName in getCheckedModNameList()) {
-				yield return Path.Combine(settings.Mods, modName);
-			}
+			return getCheckedModNameList().Select(modName => Path.Combine(settings.Mods, modName));
 		}
 
 
@@ -384,16 +381,6 @@ namespace WotModTools {
 		//http://dobon.net/vb/dotnet/control/draganddrop.html
 		private void ModCheckedListBox_MouseDown(object sender, MouseEventArgs e) {
 
-			if (e.Button == MouseButtons.Left) {
-				//ドラッグの準備
-				ListBox lbx = (ListBox)sender;
-				//マウスの押された位置を記憶
-				if (lbx.IndexFromPoint(e.X, e.Y) >= 0)
-					mouseDownPoint = new Point(e.X, e.Y);
-			}
-			else
-				mouseDownPoint = Point.Empty;
-
 			//こちらのeはクライアント画面に対して
 			int indexUnderDrag = ModCheckedListBox.IndexFromPoint(new Point(e.X, e.Y));
 			if (indexUnderDrag > -1) {
@@ -415,9 +402,6 @@ namespace WotModTools {
 
 			else if (e.Data.GetDataPresent(DataFormats.Text))
 				replaceModList(sender, e);
-		}
-		private void ModCheckedListBox_MouseUp(object sender, MouseEventArgs e) {
-
 		}
 
 		private void replaceModList(object sender, DragEventArgs e) {
@@ -444,11 +428,16 @@ namespace WotModTools {
 			Console.WriteLine("Debugボタン");
 		}
 
-		private void ModCheckedListBox_DoubleClick(object sender, EventArgs e) {
-			FileSystem.DeleteDirectory(Path.Combine(settings.Mods, ModCheckedListBox.GetItemText(ModCheckedListBox.SelectedItem)),UIOption.AllDialogs,RecycleOption.DeletePermanently, UICancelOption.ThrowException);
+		private void ModDeleteButton_Click(object sender, EventArgs e) {
+			foreach (string checkedModName in getCheckedModNameList()) {
+				try {
+					FileSystem.DeleteDirectory(Path.Combine(settings.Mods, ModCheckedListBox.GetItemText(checkedModName)), UIOption.AllDialogs, RecycleOption.DeletePermanently, UICancelOption.ThrowException);
+				}
+				catch (Exception) {
+					continue;
+				}
+			}
 		}
-
-		
 	}
 }
 
