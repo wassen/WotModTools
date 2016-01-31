@@ -16,6 +16,7 @@ namespace WotModTools {
 
 	public partial class InputModInfoForm : Form {
 		public string ToWhichFolder { get; set; }
+		//public string FromWhichFolder { get; set; }
 		private string fromWhichFoldersName;
 
 		public InputModInfoForm(string[] paths) {

@@ -26,79 +26,62 @@ namespace WotModTools {
 		public MainForm() {
 			InitializeComponent();
 			modsFolderFileSystemWatcher.Path = settings.Mods;
-			AudioApplyButton.Text = @"res\audio=>res_mods\" + settings.WotVersion + @"\audio";
-			LoadModList();
 			sw.Start();
+			LoadModList();
+			//サイズ変更の禁止
+			this.FormBorderStyle = FormBorderStyle.FixedSingle;
 		}
+
 		private void LoadModList() {
-
-			IEnumerable<string> oldMods = getAllModNameList();
-			IEnumerable<string> newMods = Program.getModFolderList();
-
+			//getAllModNameListはforeachの最中にyield returnしているため、途中でModChechedListBoxを変更するところでバグる。
+			//Listのコンストラクタに突っ込んで初期化してるが、メソッド側をIListとかに集めてから返すように変更することも検討
+			IEnumerable<string> oldModsName = new List<string>(getAllModNameList());
+			IEnumerable<string> newModsName = Program.getModFolderList();
+			CheckedListBox oldModList = ModCheckedListBox;
 			//求ム　IEnumerableからObjectCollectionへ変換
-
-			IList<int> indexList = new List<int>();
-			foreach (var item in oldMods.Except(newMods).Select((deletedModName, i) => new { deletedModName, i })) {
-				//oldMods.Where((v, i) => new { v, i })で実装できないか
-				if (oldMods.Contains(item.deletedModName)) indexList.Add(item.i);
-			}
-
-			foreach (var index in indexList) {
-				ModCheckedListBox.Items.RemoveAt(index);
-			}
-
-			foreach (string addedModName in newMods.Except(oldMods)) {
+			foreach (string addedModName in newModsName.Except(oldModsName)) {
 				ModCheckedListBox.Items.Add(addedModName);
 			}
-
-
-
+			foreach (string deleteModName in oldModsName.Except(newModsName)) {
+				ModCheckedListBox.Items.Remove(oldModList.Items[oldModList.FindStringExact(deleteModName)]);
+			}
 		}
 
 		private void ReloadModList() {
+			if (!runTaskList.All(runTask => runTask.IsCompleted)) return;
 
-			if (anyRunningTask()) return;
-
-			//reloadでチェックが消える不具合
 			reloadClock = sw.Elapsed;
 			if (reloadClock.Seconds > 1) {
-				sw.Restart();
 				LoadModList();
+				sw.Restart();
 			}
 		}
 
-		private void Form1_DragEnter(object sender, DragEventArgs e) {
-			if (e.Data.GetDataPresent(DataFormats.FileDrop))
-				e.Effect = DragDropEffects.Copy;
-			else
-				e.Effect = DragDropEffects.None;
-		}
-
-		private void Form1_DragDrop(object sender, DragEventArgs e) {
+		private void GetModInfo(object sender, DragEventArgs e) {
 			string[] paths = ((string[])e.Data.GetData(DataFormats.FileDrop, false));
 
-			//タスク終わってないのに・・・とかを処理したい。
-			runTaskList.Add(STATask.Run(() => {
-				var wfForm = new InputModInfoForm(paths);
+			runTaskList.Add(STATask.Run(
+				() => {
+					var wfForm = new InputModInfoForm(paths);
 
-				this.OpenForm(wfForm);
-				if (wfForm.DialogResult != DialogResult.Yes) return;
-				string toWhichFolder = wfForm.ToWhichFolder;
-				this.CloseForm(wfForm);
+					this.OpenForm(wfForm);
+					if (wfForm.DialogResult != DialogResult.Yes) return;
+					string toWhichFolder = wfForm.ToWhichFolder;
+					this.CloseForm(wfForm);
 
-				string[] droppedFilePaths = paths.Where(item => File.Exists(item)).ToArray<string>();
-				string[] droppedDirectoryPaths = paths.Where(item => Directory.Exists(item)).ToArray<string>();
+					string[] droppedFilePaths = paths.Where(item => File.Exists(item)).ToArray<string>();
+					string[] droppedDirectoryPaths = paths.Where(item => Directory.Exists(item)).ToArray<string>();
 
-				foreach (string droppedFilePath in droppedFilePaths) {
-					FileSystem.CopyFile(droppedFilePath, toWhichFolder, UIOption.AllDialogs);
-				}
-				foreach (string droppedDirectoryPath in droppedDirectoryPaths) {
-					FileSystem.CopyDirectory(droppedDirectoryPath, Path.Combine(toWhichFolder, Path.GetFileName(droppedDirectoryPath)), UIOption.AllDialogs);
-				}
-				//プログレスバー表示のためデリゲート断念
-				//CopyPaths(File.Copy, droppedFilePaths, toWhichFolder);
-				//CopyPaths(Program.DirectoryCopy, droppedDirectoryPaths, toWhichFolder);
-			})
+					foreach (string droppedFilePath in droppedFilePaths) {
+						FileSystem.CopyFile(droppedFilePath, toWhichFolder, UIOption.AllDialogs);
+					}
+					foreach (string droppedDirectoryPath in droppedDirectoryPaths) {
+						FileSystem.CopyDirectory(droppedDirectoryPath, Path.Combine(toWhichFolder, Path.GetFileName(droppedDirectoryPath)), UIOption.AllDialogs);
+					}
+					//プログレスバー表示のためデリゲート断念
+					//CopyPaths(File.Copy, droppedFilePaths, toWhichFolder);
+					//CopyPaths(Program.DirectoryCopy, droppedDirectoryPaths, toWhichFolder);
+				})
 			);
 		}
 
@@ -168,38 +151,68 @@ namespace WotModTools {
 
 		//TODO 複数Modを優先度付きで同時に適用したいが、まあ今度で
 
-		private void AudioApplyButton_Click(object sender, EventArgs e) {
+		private void AudioApply() {
 			string resAudioPath = Path.Combine(settings.WotDir, "res", "audio");
 			string res_modsAudioPath = Path.Combine(settings.WotDir, "res_mods", settings.WotVersion, "audio");
 
-			HardLinks(res_modsAudioPath, resAudioPath);
+			//HardLinks(res_modsAudioPath, resAudioPath);
+			FileSystem.CopyDirectory(resAudioPath, Path.Combine(res_modsAudioPath, Path.GetFileName(resAudioPath)));
 		}
 
-		private bool anyRunningTask() {
-			foreach (Task runTask in runTaskList) {
-				if (!runTask.IsCompleted) {
-					return true;
-				}
-			}
-			return false;
+		private void Notice(string str) {
+			consoleListBox.Items.Insert(0, "Modの適用を中止しました");
+			if (consoleListBox.Items.Count > 100) consoleListBox.Items.RemoveAt(100);
 		}
 
 		//string バージョンをどう扱うか・・・
 		//Modlistは設定ファイルを作る？
 		private void ApplyModButton_Click(object sender, EventArgs e) {
 
+			try {
+				if (!runTaskList.All(runTask => runTask.IsCompleted)) {
+					Notice("コピーが完了していません");
+					return;
+				}
+				runTaskList.Clear();
+
+				if (MessageBox.Show("res_modsフォルダーを一旦削除します。", "確認", MessageBoxButtons.OKCancel, MessageBoxIcon.Exclamation) == DialogResult.Cancel) throw new Exception();
+				FileSystem.DeleteDirectory(Path.Combine(settings.WotDir, "res_mods"), UIOption.OnlyErrorDialogs, RecycleOption.DeletePermanently, UICancelOption.ThrowException);
+
+				DialogResult resaudio = MessageBox.Show(@"res\audioフォルダーの中身をres_mods\" + settings.WotVersion + @"audioに移します(ボイスModなどを適用する場合、「はい」を選択して下さい。)", "確認", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation);
+				if (resaudio == DialogResult.Cancel) throw new Exception();
+				else if (resaudio == DialogResult.Yes) AudioApply();
+
+				IEnumerable<string> modPaths = getCheckedModPathList();
+
+				foreach (string modPath in modPaths) {
+					Console.WriteLine(modPath);
+					FileSystem.CopyDirectory(modPath, settings.WotDir);
+				}
+			}
+			catch (Exception) {
+				Notice("Modの適用を中止しました");
+			}
+
+
+			//競合解決部分のつくりかけ
+			//IEnumerable<ModInfo> selectedModInfos = getCheckedModNameList().Select(selectedMod => new ModInfo(selectedMod));
+			////Tools<ModInfo>.roopExcept1(selectedModInfos)では、途中の配列を取得できない。Delegeteとか？
+			//foreach (var selectedModInfo in selectedModInfos.Select((v, i) => new { v, i })) {
+			//	// すべての要素について、一つを除外した全ての要素でループ
+			//	// {1,2,3,4,5} => {2,3,4,5,1,3,4,5,1,2,4,5,1,2,3,5,1,2,3,4}
+			//	foreach (var otherModInfo in selectedModInfos.Skip(0).Take(selectedModInfo.i).Concat(selectedModInfos.Skip(selectedModInfo.i + 1).Take(selectedModInfos.Count() - selectedModInfo.i + 1))) {
+			//		selectedModInfo.v.setConflictInfo(otherModInfo);
+			//	}
+
+			//	foreach (var a in selectedModInfo.v.conflictDict) {
+			//		Console.WriteLine(a);
+			//	}
+			//}
+
 			//中止無視を実装したいが、別のスレッドでタスクリストを監視してイベントをわたす？イベントを渡すってどうやればいいんだろう・・・
-			if (anyRunningTask()) {
-				MessageBox.Show("コピーが完了していません");
-				return;
-			}
-			runTaskList.Clear();
 
-			IEnumerable<string> modPaths = getCheckedModPathList();
 
-			foreach (string modPath in modPaths) {
-				FileSystem.CopyDirectory(modPath, settings.WotDir, UIOption.AllDialogs);
-			}
+
 		}
 
 		private IEnumerable<string> getAllModNameList() {
@@ -213,6 +226,7 @@ namespace WotModTools {
 					throw new Exception();
 				}
 			}
+
 		}
 
 		private IEnumerable<string> getCheckedModNameList() {
@@ -338,10 +352,6 @@ namespace WotModTools {
 		}
 		private void textBox1_TextChanged(object sender, EventArgs e) {
 		}
-		private void listBox1_SelectedIndexChanged(object sender, EventArgs e) {
-		}
-		private void button3_Click(object sender, EventArgs e) {
-		}
 
 
 		private void modsFolderFileSystemWatcher_Changed(object sender, FileSystemEventArgs e) {
@@ -369,44 +379,48 @@ namespace WotModTools {
 			openingFormList.ForEach(form => form.Close());
 		}
 
-
-		private void button1_Click(object sender, EventArgs e) {
-
-			var oldCheckedIndices = ModCheckedListBox.Items;
-			foreach (Object a in oldCheckedIndices) {
-				ModCheckedListBox.GetItemText(a);//ここの例外？
-				Console.WriteLine(ModCheckedListBox.GetItemText(a));
-			}
-
-			//IEnumerable<ModInfo> selectedModInfos = getCheckedModNameList().Select(selectedMod => new ModInfo(selectedMod));
-			////Tools<ModInfo>.roopExcept1(selectedModInfos)では、途中の配列を取得できない。Delegeteとか？
-			//foreach (var selectedModInfo in selectedModInfos.Select((v, i) => new { v, i })) {
-			//	// すべての要素について、一つを除外した全ての要素でループ
-			//	// {1,2,3,4,5} => {2,3,4,5,1,3,4,5,1,2,4,5,1,2,3,5,1,2,3,4}
-			//	foreach (var otherModInfo in selectedModInfos.Skip(0).Take(selectedModInfo.i).Concat(selectedModInfos.Skip(selectedModInfo.i + 1).Take(selectedModInfos.Count() - selectedModInfo.i + 1))) {
-			//		selectedModInfo.v.setConflictInfo(otherModInfo);
-			//	}
-
-			//	foreach (var a in selectedModInfo.v.conflictDict) {
-			//		Console.WriteLine(a);
-			//	}
-			//}
-		}
-
+		private Point mouseDownPoint = Point.Empty;
 		//http://www.kisoplus.com/sample2/sub/listbox.html 参考
+		//http://dobon.net/vb/dotnet/control/draganddrop.html
 		private void ModCheckedListBox_MouseDown(object sender, MouseEventArgs e) {
+
+			if (e.Button == MouseButtons.Left) {
+				//ドラッグの準備
+				ListBox lbx = (ListBox)sender;
+				//マウスの押された位置を記憶
+				if (lbx.IndexFromPoint(e.X, e.Y) >= 0)
+					mouseDownPoint = new Point(e.X, e.Y);
+			}
+			else
+				mouseDownPoint = Point.Empty;
 
 			//こちらのeはクライアント画面に対して
 			int indexUnderDrag = ModCheckedListBox.IndexFromPoint(new Point(e.X, e.Y));
 			if (indexUnderDrag > -1) {
-				//第一引数のdataとしてintで渡したところ、取り出しかたがわからなかった。
-				ModCheckedListBox.DoDragDrop(indexUnderDrag.ToString(), DragDropEffects.Copy);//ドラッグスタート
+				//第一引数のdataとしてintで渡したときにdataを渡した先で取り出す方法はない感じかか
+				ModCheckedListBox.DoDragDrop(indexUnderDrag.ToString(), DragDropEffects.Copy);
 			}
 		}
+
 		private void ModCheckedListBox_DragEnter(object sender, DragEventArgs e) {
-			e.Effect = DragDropEffects.Copy;
+			if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.Text))
+				e.Effect = DragDropEffects.Copy;
+			else
+				e.Effect = DragDropEffects.None;
 		}
+
 		private void ModCheckedListBox_DragDrop(object sender, DragEventArgs e) {
+			if (e.Data.GetDataPresent(DataFormats.FileDrop))
+				GetModInfo(sender, e);
+
+			else if (e.Data.GetDataPresent(DataFormats.Text))
+				replaceModList(sender, e);
+		}
+		private void ModCheckedListBox_MouseUp(object sender, MouseEventArgs e) {
+
+		}
+
+		private void replaceModList(object sender, DragEventArgs e) {
 			CheckedListBox mclb = ModCheckedListBox;
 
 			int indexUnderDrag = int.Parse((string)e.Data.GetData(DataFormats.Text));
@@ -425,6 +439,16 @@ namespace WotModTools {
 				mclb.SetItemCheckState(indexUnderDrop, draggedState);
 			}
 		}
+
+		private void button1_Click(object sender, EventArgs e) {
+			Console.WriteLine("Debugボタン");
+		}
+
+		private void ModCheckedListBox_DoubleClick(object sender, EventArgs e) {
+			FileSystem.DeleteDirectory(Path.Combine(settings.Mods, ModCheckedListBox.GetItemText(ModCheckedListBox.SelectedItem)),UIOption.AllDialogs,RecycleOption.DeletePermanently, UICancelOption.ThrowException);
+		}
+
+		
 	}
 }
 
