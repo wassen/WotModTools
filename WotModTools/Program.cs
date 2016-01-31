@@ -48,6 +48,7 @@ namespace WotModTools {
 			}
 		}
 
+
 		public static string AddLastBackSlash(string path) {
 			var reg = new Regex(@"\\?$");
 			return reg.Replace(path, @"\", 1);
@@ -86,7 +87,7 @@ namespace WotModTools {
 
 		//staticでproperties使って大丈夫？
 		public static IEnumerable<string> getModNameList() {
-			foreach (string modName in Directory.GetDirectories(Properties.Settings.Default.Mods){
+			foreach (string modName in Directory.GetDirectories(Properties.Settings.Default.Mods)){
 				yield return Path.GetFileName(modName);
 			}
 		}
@@ -126,10 +127,16 @@ namespace WotModTools {
 
 	}
 	static class Tools<T> {
-		public static IEnumerable<T> roopExcept1(IEnumerable<T> ts) {
-			foreach (var t in ts.Select((v, i) => new { v, i })) {
-				foreach (var b in ts.Skip(0).Take(t.i).Concat(ts.Skip(t.i + 1).Take(ts.Count() - t.i + 1))) {
-					yield return b;
+		/// <summary>
+		/// すべての要素について、一つを除外した全ての要素でループ
+		/// {1,2,3,4,5} => {2,3,4,5,1,3,4,5,1,2,4,5,1,2,3,5,1,2,3,4}
+		/// </summary>
+		/// <param name="elements"></param>
+		/// <returns></returns>
+		public static IEnumerable<T> roopExcept1(IEnumerable<T> elements) {
+			foreach (var element in elements.Select((v, i) => new { v, i })) {
+				foreach (var except1 in elements.Skip(0).Take(element.i).Concat(elements.Skip(element.i + 1).Take(elements.Count() - element.i + 1))) {
+					yield return except1;
 				}
 			}
 		}

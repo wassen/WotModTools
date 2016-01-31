@@ -8,30 +8,46 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Threading;
+using Microsoft.VisualBasic.FileIO;
+using System.Drawing;
 
 namespace WotModTools {
 
 	public partial class MainForm : Form {
 
-		private List<Form> openingFormList;
-		private Properties.Settings settings;
+		private List<Form> openingFormList = new List<Form>();
+		private Properties.Settings settings = Properties.Settings.Default;
+		private TimeSpan reloadClock;
+		private Stopwatch sw = new Stopwatch();
+		private List<Task> runTaskList = new List<Task>();
+		private IList<string> modOrder = new List<string>();
+		private int indexUnderDrag;
+
 
 		public MainForm() {
 			InitializeComponent();
-			this.settings = Properties.Settings.Default;
-			this.openingFormList = new List<Form>();
 			modsFolderFileSystemWatcher.Path = settings.Mods;
 			AudioApplyButton.Text = @"res\audio=>res_mods\" + settings.WotVersion + @"\audio";
-			ReloadModList();
-
+			LoadModList();
+			sw.Start();
 		}
-
-		private void ReloadModList() {
+		private void LoadModList() {
 			ModCheckedListBox.Items.Clear();
 
 			//求ム　IEnumerableからObjectCollectionへ変換
 			foreach (string modName in Program.getModNameList()) {
 				ModCheckedListBox.Items.Add(modName);
+			}
+		}
+		private void ReloadModList() {
+
+			if (anyRunningTask()) return;
+
+			//reloadでチェックが消える不具合
+			reloadClock = sw.Elapsed;
+			if (reloadClock.Seconds > 1) {
+				sw.Restart();
+				LoadModList();
 			}
 		}
 
@@ -45,7 +61,8 @@ namespace WotModTools {
 		private void Form1_DragDrop(object sender, DragEventArgs e) {
 			string[] paths = ((string[])e.Data.GetData(DataFormats.FileDrop, false));
 
-			STATask.Run(() => {
+			//タスク終わってないのに・・・とかを処理したい。
+			runTaskList.Add(STATask.Run(() => {
 				var wfForm = new InputModInfoForm(paths);
 
 				this.OpenForm(wfForm);
@@ -56,16 +73,24 @@ namespace WotModTools {
 				string[] droppedFilePaths = paths.Where(item => File.Exists(item)).ToArray<string>();
 				string[] droppedDirectoryPaths = paths.Where(item => Directory.Exists(item)).ToArray<string>();
 
-				CopyPaths(File.Copy, droppedFilePaths, toWhichFolder);
-				CopyPaths(Program.DirectoryCopy, droppedDirectoryPaths, toWhichFolder);
-			});
+				foreach (string droppedFilePath in droppedFilePaths) {
+					FileSystem.CopyFile(droppedFilePath, toWhichFolder, UIOption.AllDialogs);
+				}
+				foreach (string droppedDirectoryPath in droppedDirectoryPaths) {
+					FileSystem.CopyDirectory(droppedDirectoryPath, Path.Combine(toWhichFolder, Path.GetFileName(droppedDirectoryPath)), UIOption.AllDialogs);
+				}
+				//プログレスバー表示のためデリゲート断念
+				//CopyPaths(File.Copy, droppedFilePaths, toWhichFolder);
+				//CopyPaths(Program.DirectoryCopy, droppedDirectoryPaths, toWhichFolder);
+			})
+			);
 		}
 
-		private void CopyPaths(Action<string, string> copy, string[] sources, string dest) {
-			foreach (string source in sources) {
-				copy(source, dest);
-			}
-		}
+		//private void CopyPaths(Action<string, string> copy, string[] sources, string dest) {
+		//	foreach (string source in sources) {
+		//		copy(source, Path.Combine(dest, Path.GetFileName(source)));
+		//	}
+		//}
 
 		//private void GetModFromDirectoryInfo(IEnumerable<DirectoryInfo> droppedDirectoryInfoEnum) {
 		//	/*
@@ -134,31 +159,49 @@ namespace WotModTools {
 			HardLinks(res_modsAudioPath, resAudioPath);
 		}
 
+		private bool anyRunningTask() {
+			foreach (Task runTask in runTaskList) {
+				if (!runTask.IsCompleted) {
+					return true;
+				}
+			}
+			return false;
+		}
 
 		//string バージョンをどう扱うか・・・
 		//Modlistは設定ファイルを作る？
 		private void ApplyModButton_Click(object sender, EventArgs e) {
-			IEnumerable<string> modPaths = getxheckedModPathList();
+
+			//中止無視を実装したいが、別のスレッドでタスクリストを監視してイベントをわたす？イベントを渡すってどうやればいいんだろう・・・
+			if (anyRunningTask()) {
+				MessageBox.Show("コピーが完了していません");
+				return;
+			}
+			runTaskList.Clear();
+
+			IEnumerable<string> modPaths = getcheckedModPathList();
 
 			foreach (string modPath in modPaths) {
-				HardLinks(settings.WotDir, modPath);
+				FileSystem.CopyDirectory(modPath, settings.WotDir, UIOption.AllDialogs);
 			}
 		}
 
-		private IEnumerable<string> getSelectedModNameList() {
+		private IEnumerable<string> getCheckedModNameList() {
 			CheckedListBox.CheckedItemCollection checkcedMods = ModCheckedListBox.CheckedItems;
 			IList<string> checkedModNameList = new List<string>();
-			foreach (Object checkedMod in checkcedMods) {
-				checkedModNameList.Add(checkedMod as string);
+			foreach (Object checkedModObj in checkcedMods) {
+				string checkedModName;
+				if ((checkedModName = checkedModObj as string) != null) {
+					yield return checkedModName;
+				}
+				else {
+					throw new Exception();
+				}
 			}
-			if (checkedModNameList.Contains(null)) {
-				throw new Exception();
-			}
-			return checkedModNameList;
 		}
 
 		private IEnumerable<string> getcheckedModPathList() {
-			foreach (string modName in getSelectedModNameList()) {
+			foreach (string modName in getCheckedModNameList()) {
 				yield return Path.Combine(settings.Mods, modName);
 			}
 		}
@@ -170,7 +213,7 @@ namespace WotModTools {
 			</summary>
 			<param name="linkDir">リンクを作成するディレクトリ</param>
 			<param name="targetDir">リンクの参照元となるディレクトリ</param>
-		*/
+*/
 		public void HardLinks(string linkDir, string targetDir) {
 
 			if (!Directory.Exists(targetDir)) {
@@ -179,8 +222,8 @@ namespace WotModTools {
 			}
 			Directory.CreateDirectory(linkDir);
 
-			var fileList = new List<string>(Directory.GetFiles(targetDir, "*", SearchOption.AllDirectories));
-			var folderList = new List<string>(Directory.GetDirectories(targetDir, "*", SearchOption.AllDirectories));
+			var fileList = new List<string>(Directory.GetFiles(targetDir, "*", System.IO.SearchOption.AllDirectories));
+			var folderList = new List<string>(Directory.GetDirectories(targetDir, "*", System.IO.SearchOption.AllDirectories));
 
 			//targetDir\B1F\B2F\fileName - targetDir = B1F\B2F\fileName を作成
 			//行末に\をつけて統一
@@ -195,7 +238,6 @@ namespace WotModTools {
 				Directory.CreateDirectory(Path.Combine(linkDir, folderName));
 			}
 
-			Process dosCmd = OpenDosCmdProcess();
 			foreach (string file in fileList) {
 				//最初に現れたtargetDirをfolderから''に置換
 				string fileName = targetReg.Replace(file, @"", 1);
@@ -212,10 +254,9 @@ namespace WotModTools {
 				commandList.Add(Path.Combine(linkDir, fullLink));
 				commandList.Add(file);
 
-				executeDosCmd(dosCmd, String.Join(" ", commandList));
+				executeDosCmd(String.Join(" ", commandList));
 			}
-			dosCmd.WaitForExit();
-			dosCmd.Close();
+
 		}
 		/*
 			XXX ディレクトリがバックスラッシュじゃなくてスラッシュだったらどうしよう・・・入出力の段階で全て統一したい。
@@ -232,30 +273,25 @@ namespace WotModTools {
 			<param name="linkDir">リンクを作成するディレクトリ</param>
 			<param name="targetDir">リンクの参照元となるディレクトリ</param>
 			TODO フォルダ名に';'が含まれてるとリンクが作られなかったため要調査
-		*/
-		public void executeDosCmd(Process p, string command) {
-			//"/c"は実行後閉じるために必要
-			p.StartInfo.Arguments = @"/c " + command;
-			p.Start();
-		}
-		public void DosCmd(Process p, IEnumerable<string> commandList) {
-			//"/c"は実行後閉じるために必要
-			p.StartInfo.Arguments = @"/c " + String.Join(" ", commandList);
-			p.Start();
-		}
+*/
+		public void executeDosCmd(string command) {
 
-		//何回もcloseするのは効率が悪い気もする
-		//ハードリンクのところで時間がかかるようなら、メソッド化せずに書いていちいちcloseしないことも検討
-
-		private static Process OpenDosCmdProcess() {
 			var p = new Process();
 			p.StartInfo.FileName = Environment.GetEnvironmentVariable("ComSpec");
 			p.StartInfo.UseShellExecute = false;
 			//p.StartInfo.RedirectStandardOutput = true;
 			p.StartInfo.RedirectStandardInput = false;
 			p.StartInfo.CreateNoWindow = true;
-			return p;
+			//"/c"は実行後閉じるために必要
+			p.StartInfo.Arguments = @"/c " + command;
+			p.Start();
+			p.WaitForExit();
+			p.Close();
 		}
+		//何回もcloseするのは効率が悪い気もする　
+		//ハードリンクのところで時間がかかるようなら、メソッド化せずに書いていちいちcloseしないことも検討
+		//メモリ食いつぶしすぎて一瞬でPCがブルスク。あぶないあぶない
+
 
 		private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e) {
 		}
@@ -313,21 +349,94 @@ namespace WotModTools {
 
 
 		private void button1_Click(object sender, EventArgs e) {
-			IEnumerable<ModInfo> selectedModInfos = getSelectedModNameList().Select(selectedMod => new ModInfo(selectedMod));
 
-			foreach (ModInfo selectedModInfo in selectedModInfos) {
-				//自分を除外した全ての要素でループ
-
-
-
-				foreach (ModInfo otherModInfo in selectedModInfos.Except(new ModInfo[] { selectedModInfo })) {
-					selectedModInfo.setConflictInfo(otherModInfo);
-				}
-				Console.WriteLine(selectedModInfo.conflictDict);
+			var oldCheckedIndices = ModCheckedListBox.Items;
+			foreach (Object a in oldCheckedIndices) {
+				ModCheckedListBox.GetItemText(a);//ここの例外？
+				Console.WriteLine(ModCheckedListBox.GetItemText(a));
 			}
 
+			//IEnumerable<ModInfo> selectedModInfos = getCheckedModNameList().Select(selectedMod => new ModInfo(selectedMod));
+			////Tools<ModInfo>.roopExcept1(selectedModInfos)では、途中の配列を取得できない。Delegeteとか？
+			//foreach (var selectedModInfo in selectedModInfos.Select((v, i) => new { v, i })) {
+			//	// すべての要素について、一つを除外した全ての要素でループ
+			//	// {1,2,3,4,5} => {2,3,4,5,1,3,4,5,1,2,4,5,1,2,3,5,1,2,3,4}
+			//	foreach (var otherModInfo in selectedModInfos.Skip(0).Take(selectedModInfo.i).Concat(selectedModInfos.Skip(selectedModInfo.i + 1).Take(selectedModInfos.Count() - selectedModInfo.i + 1))) {
+			//		selectedModInfo.v.setConflictInfo(otherModInfo);
+			//	}
 
+			//	foreach (var a in selectedModInfo.v.conflictDict) {
+			//		Console.WriteLine(a);
+			//	}
+			//}
 		}
+
+		//http://www.kisoplus.com/sample2/sub/listbox.html 参考
+		private void ModCheckedListBox_MouseDown(object sender, MouseEventArgs e) {
+
+			Point p = getClientPointOfModCheckListBox();
+			indexUnderDrag = ModCheckedListBox.IndexFromPoint(p);
+			if (indexUnderDrag > -1) {
+				ModCheckedListBox.DoDragDrop(ModCheckedListBox.Items[indexUnderDrag].ToString(), DragDropEffects.Copy);//ドラッグスタート
+			}
+		}
+		private void ModCheckedListBox_DragEnter(object sender, DragEventArgs e) {
+			e.Effect = DragDropEffects.Copy;
+		}
+		private void ModCheckedListBox_DragDrop(object sender, DragEventArgs e) {
+			string draggedModName = e.Data.GetData(DataFormats.Text).ToString();
+
+			Point p2 = new Point(e.X, e.Y);
+			int indexArg = ModCheckedListBox.IndexFromPoint(ModCheckedListBox.PointToClient(p2));
+
+
+			Point p = getClientPointOfModCheckListBox();
+			int indexUnderDrop = ModCheckedListBox.IndexFromPoint(p);
+			Console.WriteLine(indexUnderDrag);
+			Console.WriteLine(indexUnderDrop);
+			Console.WriteLine(indexArg);
+			if (-1 < indexUnderDrop && indexUnderDrop < ModCheckedListBox.Items.Count) {
+				ModCheckedListBox.Items[indexUnderDrag] = ModCheckedListBox.Items[indexUnderDrop];
+				ModCheckedListBox.Items[indexUnderDrop] = draggedModName;
+			}
+		}
+		private Point getClientPointOfModCheckListBox() {
+			Point p = Control.MousePosition;
+			return ModCheckedListBox.PointToClient(p);
+		}
+		//private void ModCheckedListBox_MouseDown(object sender, MouseEventArgs e) {
+
+		//	Point p = getClientPointOfModCheckListBox();
+		//	indexUnderDrag = ModCheckedListBox.IndexFromPoint(p);
+		//	if (indexUnderDrag > -1) {
+		//		ModCheckedListBox.DoDragDrop(ModCheckedListBox.Items[indexUnderDrag].ToString(), DragDropEffects.Copy);//ドラッグスタート
+		//	}
+		//}
+		//private void ModCheckedListBox_DragEnter(object sender, DragEventArgs e) {
+		//	e.Effect = DragDropEffects.Copy;
+		//}
+		//private void ModCheckedListBox_DragDrop(object sender, DragEventArgs e) {
+		//	string draggedModName = e.Data.GetData(DataFormats.Text).ToString();
+
+		//	Point p2 = new Point(e.X, e.Y);
+		//	int indexArg = ModCheckedListBox.IndexFromPoint(ModCheckedListBox.PointToClient(p2));
+
+
+		//	Point p = getClientPointOfModCheckListBox();
+		//	int indexUnderDrop = ModCheckedListBox.IndexFromPoint(p);
+		//	Console.WriteLine(indexUnderDrag);
+		//	Console.WriteLine(indexUnderDrop);
+		//	Console.WriteLine(indexArg);
+		//	if (-1 < indexUnderDrop && indexUnderDrop < ModCheckedListBox.Items.Count) {
+		//		ModCheckedListBox.Items[indexUnderDrag] = ModCheckedListBox.Items[indexUnderDrop];
+		//		ModCheckedListBox.Items[indexUnderDrop] = draggedModName;
+		//	}
+		//}
+		//private Point getClientPointOfModCheckListBox() {
+		//	Point p = Control.MousePosition;
+		//	return ModCheckedListBox.PointToClient(p);
+		//}
+
 	}
 }
 

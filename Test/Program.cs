@@ -5,12 +5,17 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Diagnostics;
+using Microsoft.VisualBasic.FileIO;
 
 namespace Test {
 	class Program {
 		static void Main(string[] args) {
 			string path1 = @"C:\Users\Kazuki\Desktop\new";
 			string path2 = @"C:\Users\Kazuki\Desktop\new2";
+
+			FileSystem.CopyDirectory(@"C:\Users\Kazuki\Desktop\new2", @"C:\Users\Kazuki\Desktop\new", UIOption.AllDialogs);
+
+
 
 			IList<int> a = new List<int> { 0, 1, 2, 3, 4 };
 

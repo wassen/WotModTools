@@ -97,6 +97,9 @@
 			this.ModCheckedListBox.Name = "ModCheckedListBox";
 			this.ModCheckedListBox.Size = new System.Drawing.Size(179, 242);
 			this.ModCheckedListBox.TabIndex = 12;
+			this.ModCheckedListBox.DragDrop += new System.Windows.Forms.DragEventHandler(this.ModCheckedListBox_DragDrop);
+			this.ModCheckedListBox.DragEnter += new System.Windows.Forms.DragEventHandler(this.ModCheckedListBox_DragEnter);
+			this.ModCheckedListBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ModCheckedListBox_MouseDown);
 			// 
 			// button2
 			// 
