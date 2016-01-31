@@ -21,7 +21,6 @@ namespace WotModTools {
 		private Stopwatch sw = new Stopwatch();
 		private List<Task> runTaskList = new List<Task>();
 		private IList<string> modOrder = new List<string>();
-		private int indexUnderDrag;
 
 
 		public MainForm() {
@@ -374,69 +373,30 @@ namespace WotModTools {
 		//http://www.kisoplus.com/sample2/sub/listbox.html 参考
 		private void ModCheckedListBox_MouseDown(object sender, MouseEventArgs e) {
 
-			Point p = getClientPointOfModCheckListBox();
-			indexUnderDrag = ModCheckedListBox.IndexFromPoint(p);
+		    var draggedPoint = new Point(e.X,e.Y);
+			int indexUnderDrag = ModCheckedListBox.IndexFromPoint(draggedPoint);
 			if (indexUnderDrag > -1) {
-				ModCheckedListBox.DoDragDrop(ModCheckedListBox.Items[indexUnderDrag].ToString(), DragDropEffects.Copy);//ドラッグスタート
+				//第一引数のdataとしてintで渡したところ、取り出しかたがわからなかった。
+				ModCheckedListBox.DoDragDrop(indexUnderDrag.ToString(), DragDropEffects.Copy);//ドラッグスタート
 			}
 		}
 		private void ModCheckedListBox_DragEnter(object sender, DragEventArgs e) {
 			e.Effect = DragDropEffects.Copy;
 		}
 		private void ModCheckedListBox_DragDrop(object sender, DragEventArgs e) {
-			string draggedModName = e.Data.GetData(DataFormats.Text).ToString();
 
-			Point p2 = new Point(e.X, e.Y);
-			int indexArg = ModCheckedListBox.IndexFromPoint(ModCheckedListBox.PointToClient(p2));
+			int indexUnderDrag = int.Parse((string)e.Data.GetData(DataFormats.Text));
+            string draggedModName = ModCheckedListBox.Items[indexUnderDrag] as string;
 
-
-			Point p = getClientPointOfModCheckListBox();
-			int indexUnderDrop = ModCheckedListBox.IndexFromPoint(p);
-			Console.WriteLine(indexUnderDrag);
-			Console.WriteLine(indexUnderDrop);
-			Console.WriteLine(indexArg);
+			var droppedPoint = new Point(e.X, e.Y);
+			int indexUnderDrop = ModCheckedListBox.IndexFromPoint(ModCheckedListBox.PointToClient(droppedPoint));
+			string droppedModName = ModCheckedListBox.Items[indexUnderDrop] as string;
+			
 			if (-1 < indexUnderDrop && indexUnderDrop < ModCheckedListBox.Items.Count) {
-				ModCheckedListBox.Items[indexUnderDrag] = ModCheckedListBox.Items[indexUnderDrop];
+				ModCheckedListBox.Items[indexUnderDrag] = droppedModName;
 				ModCheckedListBox.Items[indexUnderDrop] = draggedModName;
-			}
+            }
 		}
-		private Point getClientPointOfModCheckListBox() {
-			Point p = Control.MousePosition;
-			return ModCheckedListBox.PointToClient(p);
-		}
-		//private void ModCheckedListBox_MouseDown(object sender, MouseEventArgs e) {
-
-		//	Point p = getClientPointOfModCheckListBox();
-		//	indexUnderDrag = ModCheckedListBox.IndexFromPoint(p);
-		//	if (indexUnderDrag > -1) {
-		//		ModCheckedListBox.DoDragDrop(ModCheckedListBox.Items[indexUnderDrag].ToString(), DragDropEffects.Copy);//ドラッグスタート
-		//	}
-		//}
-		//private void ModCheckedListBox_DragEnter(object sender, DragEventArgs e) {
-		//	e.Effect = DragDropEffects.Copy;
-		//}
-		//private void ModCheckedListBox_DragDrop(object sender, DragEventArgs e) {
-		//	string draggedModName = e.Data.GetData(DataFormats.Text).ToString();
-
-		//	Point p2 = new Point(e.X, e.Y);
-		//	int indexArg = ModCheckedListBox.IndexFromPoint(ModCheckedListBox.PointToClient(p2));
-
-
-		//	Point p = getClientPointOfModCheckListBox();
-		//	int indexUnderDrop = ModCheckedListBox.IndexFromPoint(p);
-		//	Console.WriteLine(indexUnderDrag);
-		//	Console.WriteLine(indexUnderDrop);
-		//	Console.WriteLine(indexArg);
-		//	if (-1 < indexUnderDrop && indexUnderDrop < ModCheckedListBox.Items.Count) {
-		//		ModCheckedListBox.Items[indexUnderDrag] = ModCheckedListBox.Items[indexUnderDrop];
-		//		ModCheckedListBox.Items[indexUnderDrop] = draggedModName;
-		//	}
-		//}
-		//private Point getClientPointOfModCheckListBox() {
-		//	Point p = Control.MousePosition;
-		//	return ModCheckedListBox.PointToClient(p);
-		//}
-
 	}
 }
 
