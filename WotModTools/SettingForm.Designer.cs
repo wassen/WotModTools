@@ -1,5 +1,5 @@
 ﻿namespace WotModTools {
-	partial class FormSetting {
+	partial class SettingForm {
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -31,11 +31,12 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.SuspendLayout();
 			// 
-			// wotVersionBox
+			// WotVersionBox
 			// 
-			this.WotVersionBox.Location = new System.Drawing.Point(175, 25);
-			this.WotVersionBox.Name = "wotVersionBox";
-			this.WotVersionBox.Size = new System.Drawing.Size(144, 25);
+			this.WotVersionBox.Location = new System.Drawing.Point(140, 21);
+			this.WotVersionBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+			this.WotVersionBox.Name = "WotVersionBox";
+			this.WotVersionBox.Size = new System.Drawing.Size(116, 22);
 			this.WotVersionBox.TabIndex = 0;
 			this.toolTip1.SetToolTip(this.WotVersionBox, "asdff\\\\\\");
 			this.WotVersionBox.TextChanged += new System.EventHandler(this.wotVersionBox_TextChanged);
@@ -44,19 +45,20 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(40, 28);
-			this.label2.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
+			this.label2.Location = new System.Drawing.Point(32, 23);
+			this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
 			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(127, 18);
+			this.label2.Size = new System.Drawing.Size(106, 15);
 			this.label2.TabIndex = 5;
 			this.label2.Text = "WOTのバージョン";
 			// 
 			// button1
 			// 
 			this.button1.DialogResult = System.Windows.Forms.DialogResult.OK;
-			this.button1.Location = new System.Drawing.Point(122, 310);
+			this.button1.Location = new System.Drawing.Point(98, 258);
+			this.button1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
 			this.button1.Name = "button1";
-			this.button1.Size = new System.Drawing.Size(112, 32);
+			this.button1.Size = new System.Drawing.Size(90, 27);
 			this.button1.TabIndex = 6;
 			this.button1.Text = "変更保存";
 			this.button1.UseVisualStyleBackColor = true;
@@ -70,24 +72,26 @@
 			// 
 			this.label1.AutoSize = true;
 			this.label1.ForeColor = System.Drawing.SystemColors.Highlight;
-			this.label1.Location = new System.Drawing.Point(14, 56);
+			this.label1.Location = new System.Drawing.Point(11, 47);
+			this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
 			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(328, 18);
+			this.label1.Size = new System.Drawing.Size(275, 15);
 			this.label1.TabIndex = 7;
 			this.label1.Text = "注 Res_mods内のフォルダ名を入力して下さい";
 			this.label1.Click += new System.EventHandler(this.label1_Click);
 			// 
-			// FormSetting
+			// SettingForm
 			// 
-			this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 18F);
+			this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(353, 354);
+			this.ClientSize = new System.Drawing.Size(282, 295);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.button1);
 			this.Controls.Add(this.label2);
 			this.Controls.Add(this.WotVersionBox);
-			this.Name = "FormSetting";
-			this.Text = "Form3";
+			this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+			this.Name = "SettingForm";
+			this.Text = "SettingForm";
 			this.Load += new System.EventHandler(this.Form3_Load);
 			this.ResumeLayout(false);
 			this.PerformLayout();

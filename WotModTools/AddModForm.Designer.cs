@@ -85,7 +85,6 @@
 			// 
 			// ToWhichBrowserDialog
 			// 
-			this.ToWhichBrowserDialog.HelpRequest += new System.EventHandler(this.folderBrowserDialog1_HelpRequest);
 			// 
 			// ModNameTextBox
 			// 
@@ -104,7 +103,6 @@
 			this.label3.Size = new System.Drawing.Size(129, 12);
 			this.label3.TabIndex = 0;
 			this.label3.Text = "Modに名前をつけてください";
-			this.label3.Click += new System.EventHandler(this.label3_Click);
 			// 
 			// AddModForm
 			// 

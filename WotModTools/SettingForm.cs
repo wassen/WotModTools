@@ -9,8 +9,8 @@ using System.Windows.Forms;
 using System.IO;
 
 namespace WotModTools {
-	public partial class FormSetting : Form {
-		public FormSetting() {
+	public partial class SettingForm : Form {
+		public SettingForm() {
 			InitializeComponent();
 			WotVersionBox.Text = Properties.Settings.Default.WotVersion;
 		}

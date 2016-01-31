@@ -24,29 +24,7 @@ namespace WotModTools {
 		}
 
 
-		/**
-			<summary>
-			ディレクトリのコピー
-			</summary>
-		*/
-		public static void DirectoryCopy(string sourcePath, string destPath) {
-			DirectoryCopy(sourcePath, destPath, true);
-		}
 
-		public static void DirectoryCopy(string sourcePath, string destPath, bool underDestination) {
-			var sourceDirectory = new DirectoryInfo(sourcePath);
-			DirectoryInfo destDirectory = Directory.CreateDirectory(underDestination ? Path.Combine(destPath, sourceDirectory.Name) : destPath);
-
-			destDirectory.Attributes = sourceDirectory.Attributes;
-
-			foreach (FileInfo fi in sourceDirectory.GetFiles()) {
-				//常に上書き
-				fi.CopyTo(Path.Combine(destDirectory.FullName, fi.Name), true);
-			}
-			foreach (DirectoryInfo di in sourceDirectory.GetDirectories()) {
-				DirectoryCopy(di.FullName, destDirectory.FullName, true);
-			}
-		}
 
 
 		public static string AddLastBackSlash(string path) {
@@ -87,12 +65,12 @@ namespace WotModTools {
 
 		//staticでproperties使って大丈夫？
 		internal static IEnumerable<string> getModFolderList() {
-			foreach (string modName in Directory.GetDirectories(Properties.Settings.Default.Mods)){
+			foreach (string modName in Directory.GetDirectories(Properties.Settings.Default.Mods)) {
 				yield return Path.GetFileName(modName);
 			}
 		}
 
-		
+
 	}
 
 
@@ -186,17 +164,15 @@ namespace WotModTools {
 
 //のこしたプログラム集
 
-
-
-//TODO audioファイルが入ってないプログラムはダメなので修正
-//TODO FEVとFSBだけしかファイルがないと仮定してもいいのか？
-//Zipじゃなくても出来るようにしたい。if文分岐かな。
+//使いドコロがなくなってしまった
 /*
-zipファイル内のaudioディレクトリを検知
-ハードリンクをaudioの全てのファイルについて張る(audioディレクトリ内を除く)
-audioファイル内をリンク張る
+public static string EncloseDoubleQuotes(string input) {
+	var reg = new Regex(@"^""?|""?$");
+	return reg.Replace(input, "\"", 2);
+}
 */
 
+//Zipファイル
 //string zipFile = textBox1.Text;
 //if (!File.Exists(zipFile)) {
 //	MessageBox.Show("ファイル名:" + zipFile + "が存在しないか、ディレクトリである可能性があります。");
@@ -211,9 +187,7 @@ audioファイル内をリンク張る
 
 //Directory.GetFiles(workPath);
 
-//hardDirLink
-//深すぎフォルダ問題
-
+//ハードリンクは同時に開けないため断念したファイル比較
 /*
 //ハードリンクされた物体は片方が開かれるともう一つも開かれてることになるのか。盲点
 // This method accepts two strings the represent two files to 
@@ -267,3 +241,140 @@ fs2.Close();
 return ((file1byte - file2byte) == 0);
 }
 */
+
+//FileSystem.CopyDirectoryがあった
+/**
+<summary>
+ディレクトリのコピー
+</summary>
+*//*
+public static void DirectoryCopy(string sourcePath, string destPath) {
+	DirectoryCopy(sourcePath, destPath, true);
+}
+
+public static void DirectoryCopy(string sourcePath, string destPath, bool underDestination) {
+	var sourceDirectory = new DirectoryInfo(sourcePath);
+	DirectoryInfo destDirectory = Directory.CreateDirectory(underDestination ? Path.Combine(destPath, sourceDirectory.Name) : destPath);
+
+	destDirectory.Attributes = sourceDirectory.Attributes;
+
+	foreach (FileInfo fi in sourceDirectory.GetFiles()) {
+		//常に上書き
+		fi.CopyTo(Path.Combine(destDirectory.FullName, fi.Name), true);
+	}
+	foreach (DirectoryInfo di in sourceDirectory.GetDirectories()) {
+		DirectoryCopy(di.FullName, destDirectory.FullName, true);
+	}
+}*/
+
+/**
+<summary>
+targetDir直下にあるファイル全てをディレクトリの構造を保ったままlinkDirにハードリンクします
+</summary>
+<param name="linkDir">リンクを作成するディレクトリ</param>
+<param name="targetDir">リンクの参照元となるディレクトリ</param>
+*/
+/*
+public void HardLinks(string linkDir, string targetDir) {
+
+	if (!Directory.Exists(targetDir)) {
+		Console.WriteLine("リンク元のディレクトリが存在しません");
+		return;
+	}
+	Directory.CreateDirectory(linkDir);
+
+	var fileList = new List<string>(Directory.GetFiles(targetDir, "*", System.IO.SearchOption.AllDirectories));
+	var folderList = new List<string>(Directory.GetDirectories(targetDir, "*", System.IO.SearchOption.AllDirectories));
+
+	//targetDir\B1F\B2F\fileName - targetDir = B1F\B2F\fileName を作成
+	//行末に\をつけて統一
+	string targetDir_bs = Regex.Replace(targetDir, @"\\?$", "");
+	//\を\\に
+	targetDir_bs = Regex.Replace(targetDir_bs, @"\\|$", @"\\");
+	var targetReg = new Regex(targetDir_bs);
+
+	foreach (string folder in folderList) {
+		//最初に現れたtargetDirをfolderから''に置換
+		string folderName = targetReg.Replace(folder, @"", 1);
+		Directory.CreateDirectory(Path.Combine(linkDir, folderName));
+	}
+
+	foreach (string file in fileList) {
+		//最初に現れたtargetDirをfolderから''に置換
+		string fileName = targetReg.Replace(file, @"", 1);
+		string fullLink = Path.Combine(linkDir, fileName);
+		if (File.Exists(fullLink)) {
+			//ハードリンクを比較するうまい方法が思いつかないため問答無用で削除して再リンク（一旦閉じてからもう一つも開けばいいだけだけど）
+			File.Delete(fullLink);
+			Console.WriteLine("sakujo");
+		}
+		//存在してる時にMklinkしても何も起こらないハズ
+		IList<string> commandList = new List<string>();
+		commandList.Add("mklink");
+		commandList.Add("/h");
+		commandList.Add(Path.Combine(linkDir, fullLink));
+		commandList.Add(file);
+
+		executeDosCmd(String.Join(" ", commandList));
+	}
+
+}*/
+/*
+	XXX ディレクトリがバックスラッシュじゃなくてスラッシュだったらどうしよう・・・入出力の段階で全て統一したい。
+	Console.WriteLine(Path.AltDirectorySeparatorChar); Console.WriteLine(Path.DirectorySeparatorChar);
+	RegExpじゃなくてSubstringでやったほうが早かった気もする
+	Path.ComBineはファイル名の先頭に\が付いてるのを許さない模様（今までひっつけたディレクトリを消して、新しくディレクトリの開始として認識してしまうらしい）
+*/
+/**
+	<summary>
+	DOSコマンドのmklinkを呼び出します。
+	</summary>
+	<param name="type">"/H" ハードリンク "/J" ジャンクション "/S" シンボリックリンク </param>
+	<param name="linkDir">リンクを作成するディレクトリ</param>
+	<param name="targetDir">リンクの参照元となるディレクトリ</param>
+	TODO フォルダ名に';'が含まれてるとリンクが作られなかったため要調査
+*/
+/*
+public void executeDosCmd(string command) {
+
+	var p = new Process();
+	p.StartInfo.FileName = Environment.GetEnvironmentVariable("ComSpec");
+	p.StartInfo.UseShellExecute = false;
+	//p.StartInfo.RedirectStandardOutput = true;
+	p.StartInfo.RedirectStandardInput = false;
+	p.StartInfo.CreateNoWindow = true;
+	//"/c"は実行後閉じるために必要
+	p.StartInfo.Arguments = @"/c " + command;
+	p.Start();
+	p.WaitForExit();
+	p.Close();
+}
+*/
+//何回もcloseするのは効率が悪い気もする　
+//ハードリンクのところで時間がかかるようなら、メソッド化せずに書いていちいちcloseしないことも検討
+//メモリ食いつぶしすぎて一瞬でPCがブルスク。あぶないあぶない
+
+/*メモ
+一旦図に書いてみる
+使っててぎこちないところとかをメモっていく。
+設定ボタン右上に歯車マーク
+ドラッグアンドドロップして、テキスト変更して、テキスト変更時の処理でボックスを出す、という流れならエクスプローらー固まらないかな。
+
+ModをVoiceとその他に分ける必要性とは？
+どのフォルダーに入れますか？とか聞いたらいいんじゃね？
+
+設定ファイルに全modの情報を格納するorディレクトリ構造だけで理解する。
+*/
+//ディレクトリBの子ディレクトリにAが存在するかの判別方法（既に用意されてそうなもんだが・・・）
+//ディレクトリBから配下を取得してAを検索 => B以下の構造が複雑で膨大なファイルがあった場合無駄な計算が発生する。親から子にたどるって直感的じゃないし。
+//Replace(Stringでも、RegExでも)して文字が減ったかどうか => C:\のパターンはかぶらない気がするし、別にいいとは思うが・・・。
+//charのリストにして前から空になるまで比較し続けるってのもいいか。これらのやり方は、C:\abc\hogeとC:\aとかでもまっちしてしまうな・・・
+//\でsplitしてつなげる、前から切ってyield returnするなどで親ディレクトリのパターンを生成してマッチするか見る
+//再帰的に親ディレクトリ辿る => これだ。
+
+//定期的にやっちゃうアホコード
+//if (target == child)
+//	return true;
+//else {
+//	return false;
+//}

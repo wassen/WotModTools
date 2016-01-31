@@ -38,8 +38,7 @@
 			this.consoleListBox = new System.Windows.Forms.ListBox();
 			this.label1 = new System.Windows.Forms.Label();
 			this.label4 = new System.Windows.Forms.Label();
-			this.button1 = new System.Windows.Forms.Button();
-			this.ModDeleteButton = new System.Windows.Forms.Button();
+			this.label5 = new System.Windows.Forms.Label();
 			((System.ComponentModel.ISupportInitialize)(this.modsFolderFileSystemWatcher)).BeginInit();
 			this.SuspendLayout();
 			// 
@@ -56,7 +55,10 @@
 			this.ModCheckedListBox.TabIndex = 12;
 			this.ModCheckedListBox.DragDrop += new System.Windows.Forms.DragEventHandler(this.ModCheckedListBox_DragDrop);
 			this.ModCheckedListBox.DragEnter += new System.Windows.Forms.DragEventHandler(this.ModCheckedListBox_DragEnter);
+			this.ModCheckedListBox.DoubleClick += new System.EventHandler(this.ModCheckedListBox_DoubleClick);
 			this.ModCheckedListBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ModCheckedListBox_MouseDown);
+			this.ModCheckedListBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.ModCheckedListBox_MouseMove);
+			this.ModCheckedListBox.MouseUp += new System.Windows.Forms.MouseEventHandler(this.ModCheckedListBox_MouseUp);
 			// 
 			// button2
 			// 
@@ -84,7 +86,7 @@
 			// ApplyModButton
 			// 
 			this.ApplyModButton.Font = new System.Drawing.Font("MS UI Gothic", 9F);
-			this.ApplyModButton.Location = new System.Drawing.Point(173, 298);
+			this.ApplyModButton.Location = new System.Drawing.Point(229, 298);
 			this.ApplyModButton.Name = "ApplyModButton";
 			this.ApplyModButton.Size = new System.Drawing.Size(104, 62);
 			this.ApplyModButton.TabIndex = 14;
@@ -133,40 +135,27 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(112, 20);
+			this.label4.Location = new System.Drawing.Point(42, 20);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(355, 15);
 			this.label4.TabIndex = 16;
 			this.label4.Text = "Modの中身(res_modsなど)をドラッグアンドドロップして下さい";
 			// 
-			// button1
+			// label5
 			// 
-			this.button1.Location = new System.Drawing.Point(430, 349);
-			this.button1.Name = "button1";
-			this.button1.Size = new System.Drawing.Size(75, 23);
-			this.button1.TabIndex = 17;
-			this.button1.Text = "button1";
-			this.button1.UseVisualStyleBackColor = true;
-			this.button1.Visible = false;
-			this.button1.Click += new System.EventHandler(this.button1_Click);
-			// 
-			// ModDeleteButton
-			// 
-			this.ModDeleteButton.Location = new System.Drawing.Point(283, 321);
-			this.ModDeleteButton.Name = "ModDeleteButton";
-			this.ModDeleteButton.Size = new System.Drawing.Size(71, 39);
-			this.ModDeleteButton.TabIndex = 19;
-			this.ModDeleteButton.Text = "削除";
-			this.ModDeleteButton.UseVisualStyleBackColor = true;
-			this.ModDeleteButton.Click += new System.EventHandler(this.ModDeleteButton_Click);
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(12, 298);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(121, 15);
+			this.label5.TabIndex = 20;
+			this.label5.Text = "ダブルクリックで削除";
 			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(572, 546);
-			this.Controls.Add(this.ModDeleteButton);
-			this.Controls.Add(this.button1);
+			this.Controls.Add(this.label5);
 			this.Controls.Add(this.label4);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.label2);
@@ -180,7 +169,7 @@
 			this.Name = "MainForm";
 			this.Text = "Form1";
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-			this.Load += new System.EventHandler(this.Form1_Load);
+			this.Load += new System.EventHandler(this.MainForm_Load);
 			((System.ComponentModel.ISupportInitialize)(this.modsFolderFileSystemWatcher)).EndInit();
 			this.ResumeLayout(false);
 			this.PerformLayout();
@@ -197,9 +186,8 @@
 		private System.Windows.Forms.ListBox consoleListBox;
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.Label label1;
-		private System.Windows.Forms.Button button1;
 		public System.Windows.Forms.CheckedListBox ModCheckedListBox;
-		private System.Windows.Forms.Button ModDeleteButton;
+		private System.Windows.Forms.Label label5;
 	}
 }
 
